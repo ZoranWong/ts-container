@@ -35,7 +35,7 @@ class IOC {
 /**
  * IOC类型代理器
 * */
-let ioc = new Proxy(IOC, {
+const ioc = new Proxy(IOC, {
     get (target: typeof IOC, p: PropertyKey, receiver: any): any {
         switch (p) {
             case 'singleton':

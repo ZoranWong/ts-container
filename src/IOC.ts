@@ -1,11 +1,9 @@
 import Container from './Container';
 import "reflect-metadata";
+import Ctor from "./Contracts/Ctor";
+import ConstructorInterface from "./Contracts/ConstructorInterface";
 import IOCError from "./Expceptions/IOCError";
 
-/**
-* 构造函数接口
-* * */
-interface Ctor<T>{new (...args: Array<Function>): T}
 
 /**
  * 容器对象
@@ -17,20 +15,9 @@ const container = new Container();
 /**
  * instanceof 操作拓展
 * */
-function isReallyInstanceOf<T> (ctor: Ctor<T>, obj: T) {
+export function isReallyInstanceOf<T> (ctor: Ctor<T>, obj: T) {
     return obj instanceof ctor;
 }
-
-/**
- * 构造函数接口拓展
-* */
-interface ConstructorInterface<T> {
-    _name: string,
-    _constructorStr: string,
-    _constructor: Ctor<T>,
-    _paramTypes: Array<Function>
-}
-
 /**
  * 注册前处理函数
  * @param {T} target 注册对象

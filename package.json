@@ -1,0 +1,25 @@
+{
+  "name": "prettey/container",
+  "version": "0.0.1",
+  "description": "This package is a javascript IOC container.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "IOC",
+    "container"
+  ],
+  "author": "Zoran Wong",
+  "license": "MIT",
+  "dependencies": {
+    "@types/lodash": "^4.14.138",
+    "lodash": "^4.17.11",
+    "reflect-metadata": "^0.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^12.7.5",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.6.3"
+  }
+}

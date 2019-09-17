@@ -1,8 +1,10 @@
 import Container from './Container';
 import "reflect-metadata";
 import Ctor from "./Contracts/Ctor";
+import {isReallyInstanceOf} from "./Utils/Types";
 import ConstructorInterface from "./Contracts/ConstructorInterface";
 import IOCError from "./Expceptions/IOCError";
+import instantiate = WebAssembly.instantiate;
 
 
 /**
@@ -13,12 +15,6 @@ import IOCError from "./Expceptions/IOCError";
 const container = new Container();
 
 /**
- * instanceof 操作拓展
-* */
-export function isReallyInstanceOf<T> (ctor: Ctor<T>, obj: T) {
-    return obj instanceof ctor;
-}
-/**
  * 注册前处理函数
  * @param {T} target 注册对象
  * @param {string} name 别名
@@ -28,14 +24,13 @@ function beforeInject<T> (target: any, name: string = null): ConstructorInterfac
     let _constructor: Ctor<T> = (target instanceof Function ? target : target.constructor);
     let _constructorStr = _constructor.toString();
     let paramTypes: Array<Function> = Reflect.getMetadata('design:paramtypes', _constructor);
+    paramTypes = paramTypes ? paramTypes : [];
     if (name && container.bound(name)) {
         return;
     } else if (paramTypes.length > 0) {
         paramTypes.map((v: any, i) => {
             if (isReallyInstanceOf(_constructor, v)) {
                 throw  new IOCError('不可以依赖自身');
-            } else if (!container.bound(v)) {
-                throw new IOCError(`依赖${i}[${(v as any).name}]不可被注入`);
             }
         })
     }
@@ -48,15 +43,17 @@ function beforeInject<T> (target: any, name: string = null): ConstructorInterfac
  * @return {Array<any>}
  * */
 function getParamsInstances (paramTypes: Array<Function>): Array<any> {
-    let paramInstances: Array<any> = paramTypes.map((v, i) => {
+    let paramInstances: Array<any> = paramTypes.map((v: Function, i) => {
         // 参数不可注入
-        if (!container.bound(v)) {
-            throw new Error(`参数${i}[${(v as any).name}]不可被注入`);
-            // 参数有依赖项则递归实例化参数对象
-        } else if (v.length) {
+
+        if (v instanceof Array) {
             return getParamsInstances(v as any);
             // 参数无依赖则直接创建对象
         } else {
+            let param = factory(v);
+            if(param){
+                return param;
+            }
             return new (v as any)();
         }
     });
@@ -77,34 +74,39 @@ function createInstance<T> (paramTypes: Array<Function>, _constructor: Ctor<T>, 
 /**
  * 将class（target）注册到容器中
  * @param {String} name 别名默认没有
- * @return Function
+ * @return {ClassDecorator}
  * */
-export function register (name: string = null): Function {
+export function register (name: any = null): ClassDecorator {
     return (target: any) => {
         let {_name, _constructorStr, _constructor, _paramTypes} = beforeInject(target, name);
         if (!container.bound(_constructorStr))
-            container.bind(_constructorStr, (...args: Array<any>) => {
+            container.bind(_constructorStr, (container: Container, ...args: Array<any>) => {
                 return createInstance(_paramTypes, _constructor, args);
             });
-        if (_name)
-            container.alias(_name, _constructorStr);
+        if (_name) {
+            container.alias(_constructorStr, _name);
+        }
     }
 }
 
 /**
  * 为class（target）注册单例对象
  * @param {String} name 别名默认没有
- * @return Function
+ * @return {ClassDecorator}
  * */
-export function singleton (name: string = null): Function {
+export function singleton (name: string = null): ClassDecorator {
     return (target: any) => {
         let {_name, _constructorStr, _constructor, _paramTypes} = beforeInject(target, name);
-        if (container.bound(_constructorStr))
-            container.singleton(_constructorStr, (...args: Array<any>) => {
+        if (!container.bound(_constructorStr)){
+            container.singleton(_constructorStr, (container: Container, ...args: Array<any>) => {
                 return createInstance(_paramTypes, _constructor, args);
             });
-        if (_name)
-            container.alias(_name, _constructorStr);
+        }
+
+        if (_name) {
+            container.alias(_constructorStr, _name);
+        }
+
     }
 }
 
@@ -113,8 +115,8 @@ export function singleton (name: string = null): Function {
  * @param {String| T} name 类型或者别名
  * @return T
 * */
-export function factory<T> (name: String | T): T {
-    if (name instanceof String) {
+export function factory<T> (name: any): T {
+    if (name instanceof String || typeof name === 'string') {
         return container.get(name);
     } else if (name instanceof Function) {
         return container.get(name.toString());

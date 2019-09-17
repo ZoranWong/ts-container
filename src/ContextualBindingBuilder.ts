@@ -53,8 +53,8 @@ export default class ContextualBindingBuilder implements ContextualBindingBuilde
      * @return void
      */
     public give(implementation: any) {
-        // this.container.addContextualBinding(
-        //     this.concrete, this.need, implementation
-        // );
+        this.container.addContextualBinding(
+            this.concrete, this.need, implementation
+        );
     }
 }

@@ -1,7 +1,8 @@
-export default class ReflectionParameter {
-    private _class = null;
-    private _defaultValue = null;
-    constructor(parameterClass, _defaultValue) {
+import Ctor from "./Contracts/Ctor";
+export default class ReflectionParameter<T> {
+    private _class: Ctor<T> = null;
+    private _defaultValue: T = null;
+    constructor(parameterClass: any, _defaultValue: T) {
         this._class = parameterClass;
         this._defaultValue = _defaultValue;
     }

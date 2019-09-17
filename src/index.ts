@@ -1,11 +1,10 @@
-import {isReallyInstanceOf, register, singleton, factory} from "./IOC";
+import { register, singleton, factory} from "./IOC";
 /**
  * 注册IOC单例入口
 * */
 @singleton('IOC')
 class IOC {
-    version: String = '0.0.1';
-
+    constructor(public version: String = "0.0.1"){}
     /**
      * 静态实例类型注册函数
      * @param {any} name 注册类型别名（或者注册类型 target = null时）
@@ -47,4 +46,4 @@ const ioc = new Proxy(IOC, {
         }
     }
 });
-export default {isReallyInstanceOf, register, singleton, factory, ioc};
+export  { register, singleton, factory, ioc};

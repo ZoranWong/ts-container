@@ -4,7 +4,6 @@ import Ctor from "./Contracts/Ctor";
 import {isReallyInstanceOf} from "./Utils/Types";
 import ConstructorInterface from "./Contracts/ConstructorInterface";
 import IOCError from "./Expceptions/IOCError";
-import instantiate = WebAssembly.instantiate;
 
 
 /**

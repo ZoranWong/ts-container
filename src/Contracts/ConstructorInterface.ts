@@ -7,5 +7,4 @@ export default interface ConstructorInterface<T> {
     _name: string,
     _constructorStr: string,
     _constructor: Ctor<T>,
-    _paramTypes: Array<Function>
 }

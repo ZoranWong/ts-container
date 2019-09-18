@@ -1,9 +1,8 @@
 import Container from './Container';
 import "reflect-metadata";
 import Ctor from "./Contracts/Ctor";
-import {isReallyInstanceOf} from "./Utils/Types";
 import ConstructorInterface from "./Contracts/ConstructorInterface";
-import IOCError from "./Expceptions/IOCError";
+import ReflectClass from "./ReflectClass";
 
 
 /**
@@ -11,7 +10,7 @@ import IOCError from "./Expceptions/IOCError";
  * @var
  * @type {Container} container
 * */
-const container = new Container();
+export const container = new Container();
 
 /**
  * 注册前处理函数
@@ -22,51 +21,29 @@ const container = new Container();
 function beforeInject<T> (target: any, name: string = null): ConstructorInterface<T> {
     let _constructor: Ctor<T> = (target instanceof Function ? target : target.constructor);
     let _constructorStr = _constructor.toString();
-    let paramTypes: Array<Function> = Reflect.getMetadata('design:paramtypes', _constructor);
-    paramTypes = paramTypes ? paramTypes : [];
     if (name && container.bound(name)) {
         return;
-    } else if (paramTypes.length > 0) {
-        paramTypes.map((v: any, i) => {
-            if (isReallyInstanceOf(_constructor, v)) {
-                throw  new IOCError('不可以依赖自身');
-            }
-        })
     }
-    return {_name: name, _constructorStr: _constructorStr, _constructor: _constructor, _paramTypes: paramTypes};
-}
-
-/**
- * 获取参数列表
- * @param {Array<Function>} paramTypes 参数列表类型数组
- * @return {Array<any>}
- * */
-function getParamsInstances (paramTypes: Array<Function>): Array<any> {
-    let paramInstances: Array<any> = paramTypes.map((v: Function, i) => {
-        // 参数不可注入
-
-        if (v instanceof Array) {
-            return getParamsInstances(v as any);
-            // 参数无依赖则直接创建对象
-        } else {
-            let param = factory(v);
-            if(param){
-                return param;
-            }
-            return new (v as any)();
-        }
-    });
-    return paramInstances;
+    return {_name: name, _constructorStr: _constructorStr, _constructor: _constructor};
 }
 
 /**
  * 创建实例
- * @param {Array<Function>} paramTypes 参数类型数组
- * @param {{new (...args: Array<Function>): T}}
+ * @param {Ctor<T>} _constructor
+ * @param {Array<any>} args
  * @return Function
  * */
-function createInstance<T> (paramTypes: Array<Function>, _constructor: Ctor<T>, args: Array<any>) {
-    let paramInstances: Array<any> = args.length > 0 ? args : getParamsInstances(paramTypes);
+function createInstance<T> (_constructor: Ctor<T>, args: Array<any>) {
+    let reflectClass = new ReflectClass(_constructor);
+    let params = reflectClass.getParameters();
+    let paramInstances: Array<any> = [];
+    params.forEach((v, k) => {
+        if(typeof args[k] !== 'undefined') {
+            paramInstances.push(args[k]);
+        }else{
+            paramInstances.push(v);
+        }
+    });
     return new _constructor(...paramInstances);
 }
 
@@ -77,10 +54,10 @@ function createInstance<T> (paramTypes: Array<Function>, _constructor: Ctor<T>, 
  * */
 export function register (name: any = null): ClassDecorator {
     return (target: any) => {
-        let {_name, _constructorStr, _constructor, _paramTypes} = beforeInject(target, name);
+        let {_name, _constructorStr, _constructor} = beforeInject(target, name);
         if (!container.bound(_constructorStr))
             container.bind(_constructorStr, (container: Container, ...args: Array<any>) => {
-                return createInstance(_paramTypes, _constructor, args);
+                return createInstance( _constructor, args);
             });
         if (_name) {
             container.alias(_constructorStr, _name);
@@ -95,10 +72,10 @@ export function register (name: any = null): ClassDecorator {
  * */
 export function singleton (name: string = null): ClassDecorator {
     return (target: any) => {
-        let {_name, _constructorStr, _constructor, _paramTypes} = beforeInject(target, name);
+        let {_name, _constructorStr, _constructor} = beforeInject(target, name);
         if (!container.bound(_constructorStr)){
             container.singleton(_constructorStr, (container: Container, ...args: Array<any>) => {
-                return createInstance(_paramTypes, _constructor, args);
+                return createInstance( _constructor, args);
             });
         }
 

@@ -1,9 +1,10 @@
-import { register, singleton, factory} from "./IOC";
+import {register, singleton, factory, container} from "./IOC";
+import Container from "./Container";
 /**
  * 注册IOC单例入口
 * */
 @singleton('IOC')
-class IOC {
+export class IOC {
     constructor(public version: String = "0.0.1"){}
     /**
      * 静态实例类型注册函数
@@ -31,19 +32,4 @@ class IOC {
         singleton(name)(target);
     }
 }
-/**
- * IOC类型代理器
-* */
-const ioc = new Proxy(IOC, {
-    get (target: typeof IOC, p: PropertyKey, receiver: any): any {
-        switch (p) {
-            case 'singleton':
-                return target.singleton;
-            case 'register':
-                return target.register;
-            default:
-                return factory(p);
-        }
-    }
-});
-export  { register, singleton, factory, ioc};
+export  { register, singleton, factory};

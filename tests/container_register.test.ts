@@ -1,5 +1,7 @@
 import {register, singleton, factory, makeWith} from "../src/IOC";
-import {isClosure, isReallyInstanceOf, isTypeOf} from "../src/Utils/Types";
+import {ctorParamMetadata, isClosure, isReallyInstanceOf, isTypeOf} from "../src/Utils/Types";
+import {IOC} from "../src";
+import ReflectClass from "../src/ReflectClass";
 declare var test: Function;
 declare var expect: Function;
 @singleton()
@@ -12,6 +14,7 @@ class OtherService {
 class TestService {
     constructor(public readonly otherService: OtherService) {}
 }
+
 test('register: factory(\'test\') === factory(\'test\') : false', () => {
     expect(factory('test') === factory('test')).toBe(false);
 });
@@ -54,4 +57,18 @@ test('makeWith: makeWith(\'test1\', 3).a === 3: true', () => {
 
 test('makeWith: makeWith(\'test\', new OtherService).otherService === factory(OtherService): false', () => {
     expect((makeWith('test', new OtherService()) as TestService).otherService === factory(OtherService)).toBe(false);
+});
+@register('t2')
+class T2 {
+    constructor (public readonly a: string = 'test') {}
+}
+
+
+
+test('makeWith: makeWith(\'t2\', "test class T2").a === "test": false', () => {
+    expect((makeWith('t2', "test class T2") as T2).a === "test").toBe(false);
+});
+
+test('factory: factory(\'t2\').a === "test": true', () => {
+    expect((factory('t2') as T2).a === "test").toBe(true);
 });

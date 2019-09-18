@@ -1,4 +1,4 @@
-# pretty-ts-container一款提供装饰器风格的类型依赖注入方式的类管理容器，所用的类型最后都会被注册到一个全局的container对象里面。
+### pretty-ts-container一款提供装饰器风格的类型依赖注入方式的类管理容器，所用的类型最后都会被注册到一个全局的container对象里面。
 ##### 安装
 - npm install pretty-ts-container --save
 - npm i pretty-ts-container --save

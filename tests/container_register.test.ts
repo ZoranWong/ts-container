@@ -1,4 +1,4 @@
-import {register, singleton, factory} from "../src/IOC";
+import {register, singleton, factory, makeWith} from "../src/IOC";
 import {isClosure, isReallyInstanceOf, isTypeOf} from "../src/Utils/Types";
 declare var test: Function;
 declare var expect: Function;
@@ -8,7 +8,6 @@ class OtherService {
     }
 }
 
-console.log(factory(OtherService));
 @register('test')
 class TestService {
     constructor(public readonly otherService: OtherService) {}
@@ -43,4 +42,16 @@ test('isClosure: TestService: false', () => {
 
 test('isClosure: () => {}: true', () => {
     expect(isClosure(() => {})).toBe(true);
+});
+
+@register('test1')
+class T1 {
+    constructor(public readonly a: Number = 1){}
+}
+test('makeWith: makeWith(\'test1\', 3).a === 3: true', () => {
+    expect((makeWith('test1', 3) as T1).a === 3).toBe(true);
+});
+
+test('makeWith: makeWith(\'test\', new OtherService).otherService === factory(OtherService): false', () => {
+    expect((makeWith('test', new OtherService()) as TestService).otherService === factory(OtherService)).toBe(false);
 });

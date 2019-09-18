@@ -120,5 +120,14 @@ export function factory<T> (name: any): T {
     } else if (name instanceof Function) {
         return container.get(name.toString());
     }
-    return name;
+    return null;
+}
+
+export function makeWith<T> (name: any, ...args: any[]): T {
+    if (name instanceof String || typeof name === 'string') {
+        return container.makeWith(name, ...args);
+    } else if (name instanceof Function) {
+        return container.makeWith(name.toString(), ...args);
+    }
+    return null;
 }

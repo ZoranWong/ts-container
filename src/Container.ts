@@ -142,7 +142,7 @@ export default class Container implements ContainerContract {
         return null;
     }
 
-    protected resolve ($abstract: string, parameters: Array<any> = []): any {
+    protected resolve ($abstract: any, parameters: Array<any> = []): any {
         $abstract = this.getAlias($abstract);
 
         let needsContextualBuild = (parameters.length > 0 || !_.isEmpty(
@@ -476,7 +476,16 @@ export default class Container implements ContainerContract {
     protected getClosure (concrete: Closure): Closure {
         return () => {
             let parameters: Array<any> = end(this._with);
-            return concrete(this, ...parameters);
+
+            try {
+                if(!_.isArray(parameters)) {
+                    parameters = [parameters];
+                }
+                return concrete(this, ...parameters);
+            }catch (e) {
+                return null;
+            }
+
         };
     }
 
@@ -617,7 +626,7 @@ export default class Container implements ContainerContract {
      * @param  array  $parameters
      * @return any
      */
-    public makeWith ($abstract: string, parameters: any[] = []): any {
+    public makeWith ($abstract: String, parameters: any[] = []): any {
         return this.make($abstract, parameters);
     }
 
@@ -628,7 +637,7 @@ export default class Container implements ContainerContract {
      * @param  Array<any>  parameters
      * @return any
      */
-    public make ($abstract: string, parameters: Array<any> = []): any {
+    public make ($abstract: String, parameters: Array<any> = []): any {
         return this.resolve($abstract, parameters);
     }
 

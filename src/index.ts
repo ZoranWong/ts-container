@@ -1,5 +1,5 @@
 import {register, singleton, factory, makeWith} from "./IOC";
-import Container from "./Container";
+
 /**
  * 注册IOC单例入口
 * */

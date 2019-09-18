@@ -6,7 +6,6 @@ export default interface ContextualBindingBuilder {
      * @return $this
      */
     needs(abstract: any): void;
-
     /**
      * Define the implementation for the contextual binding.
      *

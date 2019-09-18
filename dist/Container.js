@@ -1,188 +1,149 @@
-import ContainerContract from './Contracts/Container';
-import {Closure, isTypeOf} from './Utils/Types';
-import ContextualBindingBuilder from './ContextualBindingBuilder';
-import * as _ from 'lodash';
-import Binding from './Contracts/Binding';
-import Stack from "./Contracts/Stack";
-import {end} from "./Utils/array";
-import TMap from "./TMap";
-
-export default class Container implements ContainerContract {
-    /**
-     * The current globally available container (if any).
-     *
-     * @var static instance
-     */
-    protected static instance: any = null;
-
-    /**
-     * An array of the types that have been resolved.
-     *
-     * @var Map<string, any> _resolved
-     */
-    protected _resolved: TMap<any> = new TMap<any>();
-
-    /**
-     * The container's bindings.
-     *
-     * @var array
-     */
-    protected _bindings: TMap<Binding> = new TMap<Binding>();
-
-    /**
-     * The container's method bindings.
-     *
-     * @var array
-     */
-    protected _methodBindings: TMap<Closure> = new TMap<Closure>();
-
-    /**
-     * The container's shared instances.
-     *
-     * @var array
-     */
-    protected _instances: TMap<any> = new TMap<any>();
-
-    /**
-     * The registered type aliases.
-     *
-     * @var array
-     */
-    protected _aliases: TMap<any> = new TMap<any>();
-
-    /**
-     * The registered aliases keyed by the $abstract name.
-     *
-     * @var array
-     */
-    protected _$abstractAliases: TMap<Array<string>> = new TMap<Array<string>>();
-
-    /**
-     * The extension closures for services.
-     *
-     * @var array
-     */
-    protected _extenders: TMap<Array<any>> = new TMap<Array<any>>();
-
-    /**
-     * All of the registered tags.
-     *
-     * @var array
-     */
-    protected _tags: TMap<Array<any>> = new TMap<Array<any>>();
-
-    /**
-     * The stack of concretions currently being built.
-     *
-     * @var array
-     */
-    protected _buildStack: Stack = new Stack();
-
-    /**
-     * The parameter override stack.
-     *
-     * @var array
-     */
-    protected _with: any[] = [];
-
-    /**
-     * The contextual binding map.
-     *
-     * @var array
-     */
-    public _contextual: any[] = [];
-
-    /**
-     * All of the registered rebound callbacks.
-     *
-     * @var array
-     */
-    protected _reboundCallbacks: TMap<Array<Closure>> = new TMap<Array<Closure>>();
-
-    /**
-     * All of the global resolving callbacks.
-     *
-     * @var array
-     */
-    protected _globalResolvingCallbacks: Array<any> = [];
-
-    /**
-     * All of the global after resolving callbacks.
-     *
-     * @var array
-     */
-    protected _globalAfterResolvingCallbacks: Array<any> = [];
-
-    /**
-     * All of the resolving callbacks by class type.
-     *
-     * @var array
-     */
-    protected _resolvingCallbacks: Array<any> = [];
-
-    /**
-     * All of the after resolving callbacks by class type.
-     *
-     * @var array
-     */
-    protected _afterResolvingCallbacks: Array<any> = [];
-
-    constructor () {
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const Types_1 = require("./Utils/Types");
+const ContextualBindingBuilder_1 = require("./ContextualBindingBuilder");
+const _ = require("lodash");
+const Stack_1 = require("./Contracts/Stack");
+const array_1 = require("./Utils/array");
+const TMap_1 = require("./TMap");
+class Container {
+    constructor() {
+        /**
+         * An array of the types that have been resolved.
+         *
+         * @var Map<string, any> _resolved
+         */
+        this._resolved = new TMap_1.default();
+        /**
+         * The container's bindings.
+         *
+         * @var array
+         */
+        this._bindings = new TMap_1.default();
+        /**
+         * The container's method bindings.
+         *
+         * @var array
+         */
+        this._methodBindings = new TMap_1.default();
+        /**
+         * The container's shared instances.
+         *
+         * @var array
+         */
+        this._instances = new TMap_1.default();
+        /**
+         * The registered type aliases.
+         *
+         * @var array
+         */
+        this._aliases = new TMap_1.default();
+        /**
+         * The registered aliases keyed by the $abstract name.
+         *
+         * @var array
+         */
+        this._$abstractAliases = new TMap_1.default();
+        /**
+         * The extension closures for services.
+         *
+         * @var array
+         */
+        this._extenders = new TMap_1.default();
+        /**
+         * All of the registered tags.
+         *
+         * @var array
+         */
+        this._tags = new TMap_1.default();
+        /**
+         * The stack of concretions currently being built.
+         *
+         * @var array
+         */
+        this._buildStack = new Stack_1.default();
+        /**
+         * The parameter override stack.
+         *
+         * @var array
+         */
+        this._with = [];
+        /**
+         * The contextual binding map.
+         *
+         * @var array
+         */
+        this._contextual = [];
+        /**
+         * All of the registered rebound callbacks.
+         *
+         * @var array
+         */
+        this._reboundCallbacks = new TMap_1.default();
+        /**
+         * All of the global resolving callbacks.
+         *
+         * @var array
+         */
+        this._globalResolvingCallbacks = [];
+        /**
+         * All of the global after resolving callbacks.
+         *
+         * @var array
+         */
+        this._globalAfterResolvingCallbacks = [];
+        /**
+         * All of the resolving callbacks by class type.
+         *
+         * @var array
+         */
+        this._resolvingCallbacks = [];
+        /**
+         * All of the after resolving callbacks by class type.
+         *
+         * @var array
+         */
+        this._afterResolvingCallbacks = [];
     }
-
-    public get (id: any): any {
+    get(id) {
         if (this.has(id)) {
             return this.resolve(id);
         }
         return null;
     }
-
-    protected resolve ($abstract: any, parameters: Array<any> = []): any {
+    resolve($abstract, parameters = []) {
         $abstract = this.getAlias($abstract);
-
-        let needsContextualBuild = (parameters.length > 0 || !_.isEmpty(
-            this.getContextualConcrete($abstract)
-        ));
+        let needsContextualBuild = (parameters.length > 0 || !_.isEmpty(this.getContextualConcrete($abstract)));
         if (!_.isEmpty(this._instances.get($abstract)) && !needsContextualBuild) {
             return this._instances.get($abstract);
         }
-
         this._with.push(parameters);
-
         let concrete = this.getConcrete($abstract);
-
-        let object: any = concrete();
+        let object = concrete();
         let extenders = this.getExtenders($abstract) ? this.getExtenders($abstract) : [];
-        extenders.forEach(($extender: Closure) => {
+        extenders.forEach(($extender) => {
             object = $extender(object, this);
         });
-
         if (this.isShared($abstract) && !needsContextualBuild) {
             this._instances.set($abstract, object);
         }
-
         this.fireResolvingCallbacks($abstract, object);
-
         this._resolved.set($abstract, true);
         this._with.pop();
         return object;
     }
-
-    public addContextualBinding ($concrete: any, $abstract: any, $implementation: any): void {
+    addContextualBinding($concrete, $abstract, $implementation) {
         this._contextual[$concrete][this.getAlias($abstract)] = $implementation;
     }
-
     /**
      * Determine if the container has a method binding.
      *
      * @param  string  $method
      * @return boolean
      */
-    public hasMethodBinding (method: string): boolean {
+    hasMethodBinding(method) {
         return !_.isNull(this._methodBindings.get(method));
     }
-
     /**
      * Get the method binding for the given method.
      *
@@ -190,10 +151,9 @@ export default class Container implements ContainerContract {
      * @param  any  instance
      * @return any
      */
-    public callMethodBinding (method: string, instance: any): any {
+    callMethodBinding(method, instance) {
         return this._methodBindings.get(method).apply(instance, this);
     }
-
     /**
      * Fire all of the resolving callbacks.
      *
@@ -201,95 +161,79 @@ export default class Container implements ContainerContract {
      * @param  any   object
      * @return void
      */
-    protected fireResolvingCallbacks ($abstract: string, object: any) {
+    fireResolvingCallbacks($abstract, object) {
         this.fireCallbackArray(object, this._globalResolvingCallbacks);
-
-        this.fireCallbackArray(
-            object, this.getCallbacksForType($abstract, object, this._resolvingCallbacks)
-        );
-
+        this.fireCallbackArray(object, this.getCallbacksForType($abstract, object, this._resolvingCallbacks));
         this.fireAfterResolvingCallbacks($abstract, object);
     }
-
-    protected fireAfterResolvingCallbacks ($abstract: string, object: any): any {
+    fireAfterResolvingCallbacks($abstract, object) {
         this.fireCallbackArray(object, this._globalAfterResolvingCallbacks);
-
-        this.fireCallbackArray(
-            object, this.getCallbacksForType($abstract, object, this._afterResolvingCallbacks)
-        );
+        this.fireCallbackArray(object, this.getCallbacksForType($abstract, object, this._afterResolvingCallbacks));
     }
-
-    protected getCallbacksForType ($abstract: string, object: any, callbacksForType: Array<any>): Array<any> {
-        let results: any = [];
-        callbacksForType.forEach((callbacks: any, type: any) => {
-            if (type === $abstract || isTypeOf(object, type)) {
+    getCallbacksForType($abstract, object, callbacksForType) {
+        let results = [];
+        callbacksForType.forEach((callbacks, type) => {
+            if (type === $abstract || Types_1.isTypeOf(object, type)) {
                 results = results.concat(callbacks);
             }
         });
         return results;
     }
-
-    protected fireCallbackArray (object: any, callbacks: Array<any>) {
-        callbacks.forEach((callback: any) => {
+    fireCallbackArray(object, callbacks) {
+        callbacks.forEach((callback) => {
             callback instanceof Function && (callback = [callback]);
-            callback.forEach((fn: Closure) => {
+            callback.forEach((fn) => {
                 fn(object, this);
             });
         });
     }
-
-    protected isShared ($abstract: string): boolean {
-        let binding: Binding = this._bindings.get($abstract);
+    isShared($abstract) {
+        let binding = this._bindings.get($abstract);
         return !_.isEmpty(this._instances.get($abstract)) && !_.isUndefined(this._instances.get($abstract))
             || (!_.isUndefined(binding) && !_.isEmpty(binding) && !_.isUndefined(binding.concrete)
                 && binding.shared === true);
     }
-
     /**
      * Get the extender callbacks for a given type.
      *
      * @param  string  $$abstract
      * @return array
      */
-    protected getExtenders ($abstract: string): Array<any> {
+    getExtenders($abstract) {
         $abstract = this.getAlias($abstract);
         if (!this._extenders.get($abstract)) {
             return this._extenders.get($abstract);
         }
         return [];
     }
-
     /**
      * Get the concrete type for a given $abstract.
      *
      * @param  {string}  $abstract
      * @return {any}   concrete
      */
-    protected getConcrete ($abstract: string): any {
+    getConcrete($abstract) {
         let concrete = this.getContextualConcrete($abstract);
         if (!_.isUndefined(concrete) && !_.isNull(concrete)) {
             return concrete;
         }
         let binding = this._bindings.get($abstract);
-
         if (!_.isUndefined(binding) && !_.isNull(binding)) {
             return binding.concrete;
         }
         return $abstract;
     }
-
     /**
      * Get the contextual concrete binding for the given $abstract.
      *
      * @param  string  $abstract
      * @return string|null
      */
-    protected getContextualConcrete ($abstract: string): any {
+    getContextualConcrete($abstract) {
         let binding = this.findInContextualBindings($abstract);
         if (!_.isUndefined(binding) && !_.isNull(binding)) {
             return binding;
         }
-
         // Next we need to see if a contextual binding might be bound under an alias of the
         // given $abstract type. So, we will need to check if any aliases exist with this
         // type and then spin through them and check for contextual bindings on these.
@@ -303,41 +247,36 @@ export default class Container implements ContainerContract {
             }
         });
     }
-
     /**
      * Find the concrete binding for the given $abstract in the contextual binding array.
      *
      * @param  string  $abstract
      * @return string|null
      */
-    protected findInContextualBindings ($abstract: string): any {
+    findInContextualBindings($abstract) {
         let end = this._buildStack.end();
         if (!_.isUndefined(this._contextual[end]) && !_.isArray(this._contextual[end]) && !_.isUndefined(this._contextual[end][$abstract])) {
             return this._contextual[end][$abstract];
         }
         return null;
     }
-
-    public has (id: any): boolean {
+    has(id) {
         return this.bound(id);
     }
-
     /**
      * Determine if the given $abstract type has been bound.
      *
      * @param  {string}  $abstract
      * @return boolean
      */
-    public bound ($abstract: string): boolean {
+    bound($abstract) {
         return !_.isUndefined(this._bindings.get($abstract))
             || !_.isUndefined(this._instances.get($abstract))
             || this.isAlias($abstract);
     }
-
-    public isAlias ($abstract: string): boolean {
+    isAlias($abstract) {
         return !_.isUndefined(this._aliases.get($abstract));
     }
-
     /**
      * Alias a type to a different name.
      *
@@ -345,14 +284,13 @@ export default class Container implements ContainerContract {
      * @param  string  alias
      * @return void
      */
-    public alias ($abstract: string, alias: string) {
+    alias($abstract, alias) {
         this._aliases.set(alias, $abstract);
         let aliases = this._$abstractAliases.get($abstract);
         aliases = aliases ? aliases : [];
         aliases.push(alias);
         this._$abstractAliases.set($abstract, aliases);
     }
-
     /**
      * Get the alias for an $abstract if available.
      *
@@ -361,7 +299,7 @@ export default class Container implements ContainerContract {
      *
      * @throws \LogicException
      */
-    public getAlias ($abstract: string): string {
+    getAlias($abstract) {
         let _aliases = this._aliases.get($abstract);
         if (_.isUndefined(_aliases)) {
             return $abstract;
@@ -371,7 +309,6 @@ export default class Container implements ContainerContract {
         }
         return this.getAlias(_aliases);
     }
-
     /**
      * Assign a set of tags to a given binding.
      *
@@ -379,35 +316,33 @@ export default class Container implements ContainerContract {
      * @param  array|any   ...tags
      * @return void
      */
-    public tag ($abstracts: any, ...tags: Array<any>) {
+    tag($abstracts, ...tags) {
         tags.forEach((tag) => {
             if (_.isNull(this._tags.get(tag))) {
                 this._tags.set(tag, []);
             }
-            $abstracts = $abstracts as Array<any>;
+            $abstracts = $abstracts;
             _.forEach($abstracts, ($abstract) => {
                 this._tags.get(tag).push($abstract);
             });
         });
     }
-
     /**
      * Resolve all of the bindings for a given tag.
      *
      * @param  string  tag
      * @return array
      */
-    public tagged (tag: string): Array<any> {
-        let results: any[] = [];
+    tagged(tag) {
+        let results = [];
         let tags = this._tags.get(tag);
         if (_.isEmpty(tags)) {
-            tags.forEach(($abstract: any) => {
+            tags.forEach(($abstract) => {
                 results.push(this.make($abstract));
             });
         }
         return results;
     }
-
     /**
      * Register a binding with the container.
      *
@@ -416,36 +351,33 @@ export default class Container implements ContainerContract {
      * @param  {boolean}  shared
      * @return void
      */
-    public bind ($abstract: string, concrete: Closure, shared: boolean = false) {
+    bind($abstract, concrete, shared = false) {
         concrete = this.getClosure(concrete);
-        let compact: Binding = {"concrete": concrete, "shared": shared};
+        let compact = { "concrete": concrete, "shared": shared };
         this._bindings.set($abstract, compact);
         if (this.resolved($abstract)) {
             this.rebound($abstract);
         }
     }
-
-    protected rebound ($abstract: any): any {
+    rebound($abstract) {
         let instance = this.make($abstract);
         let callbacks = this.getReboundCallbacks($abstract);
-        callbacks.forEach((callback: Closure) => {
+        callbacks.forEach((callback) => {
             callback(this, instance);
         });
     }
-
     /**
      * Get the rebound callbacks for a given type.
      *
      * @param  {string}  $abstract
      * @return {array}
      */
-    protected getReboundCallbacks ($abstract: any): Array<any> {
+    getReboundCallbacks($abstract) {
         if (_.isNull(this._reboundCallbacks.get($abstract))) {
             return this._reboundCallbacks.get($abstract);
         }
         return [];
     }
-
     /**
      * Bind a new callback to an abstract's rebind event.
      *
@@ -453,7 +385,7 @@ export default class Container implements ContainerContract {
      * @param  {Closure}  $callback
      * @return {any}
      */
-    public rebinding ($abstract: any, $callback: Closure): any {
+    rebinding($abstract, $callback) {
         $abstract = this.getAlias($abstract);
         let callbacks = this._reboundCallbacks.get($abstract);
         callbacks = callbacks ? callbacks : [];
@@ -463,46 +395,40 @@ export default class Container implements ContainerContract {
             return this.make($abstract);
         }
     }
-
     /**
      * Get the Closure to be used when building a type.
      * @param  {Closure}  $concrete
      * @return {Closure}
      */
-    protected getClosure (concrete: Closure): Closure {
+    getClosure(concrete) {
         return () => {
-            let parameters: Array<any> = end(this._with);
-
+            let parameters = array_1.end(this._with);
             try {
-                if(!_.isArray(parameters)) {
+                if (!_.isArray(parameters)) {
                     parameters = [parameters];
                 }
                 return concrete(this, ...parameters);
-            }catch (e) {
+            }
+            catch (e) {
                 return null;
             }
-
         };
     }
-
-    public build (concrete: Closure): any {
+    build(concrete) {
         return concrete();
     }
-
     /**
      * Get the last parameter override.
      *
      * @return array
      */
-    protected getLastParameterOverride (): Array<any> {
-        return this._with.length > 0 ? end(this._with) : [];
+    getLastParameterOverride() {
+        return this._with.length > 0 ? array_1.end(this._with) : [];
     }
-
-    protected dropStaleInstances ($abstract: string) {
+    dropStaleInstances($abstract) {
         this._instances.delete($abstract);
         this._aliases.delete($abstract);
     }
-
     /**
      * Register a binding if it hasn't already been registered.
      *
@@ -511,12 +437,11 @@ export default class Container implements ContainerContract {
      * @param  boolean  shared
      * @return void
      */
-    public bindIf ($abstract: string, concrete: any = null, shared: boolean = false) {
+    bindIf($abstract, concrete = null, shared = false) {
         if (!this.bound($abstract)) {
             this.bind($abstract, concrete, shared);
         }
     }
-
     /**
      * Register a shared binding in the container.
      *
@@ -524,10 +449,9 @@ export default class Container implements ContainerContract {
      * @param  Closure|string|null  concrete
      * @return void
      */
-    public singleton ($abstract: string, concrete: any = null) {
+    singleton($abstract, concrete = null) {
         this.bind($abstract, concrete, true);
     }
-
     /**
      * "Extend" an $abstract type in the container.
      *
@@ -537,7 +461,7 @@ export default class Container implements ContainerContract {
      *
      * @throws \InvalidArgumentException
      */
-    public extend ($abstract: string, closure: Closure) {
+    extend($abstract, closure) {
         $abstract = this.getAlias($abstract);
         let instance = this._instances.get($abstract);
         if (!_.isNull(instance)) {
@@ -545,14 +469,14 @@ export default class Container implements ContainerContract {
             stack.push(closure(instance, this));
             this._instances.set($abstract, stack);
             this.rebound($abstract);
-        } else {
+        }
+        else {
             this._extenders.get($abstract).push(closure);
             if (this.resolved($abstract)) {
                 this.rebound($abstract);
             }
         }
     }
-
     /**
      * Register an existing instance as shared in the container.
      *
@@ -560,26 +484,23 @@ export default class Container implements ContainerContract {
      * @param  any   instance
      * @return any
      */
-    public instance ($abstract: string, instance: any): any {
+    instance($abstract, instance) {
         this.remove$abstractAlias($abstract);
         let isBound = this.bound($abstract);
         this._aliases.delete($abstract);
-
         this._instances.set($abstract, instance);
         if (isBound) {
             this.rebound($abstract);
         }
         return instance;
     }
-
-
     /**
      * Remove an alias from the contextual binding alias cache.
      *
      * @param  string  $searched
      * @return void
      */
-    protected remove$abstractAlias (searched: string) {
+    remove$abstractAlias(searched) {
         if (_.isEmpty(this._aliases.get(searched))) {
             return;
         }
@@ -592,29 +513,26 @@ export default class Container implements ContainerContract {
         });
         throw new Error("Method not implemented.");
     }
-
     /**
      * Define a contextual binding.
      *
      * @param  string  $concrete
      * @return ContextualBindingBuilder
      */
-    public when (concrete: string): ContextualBindingBuilder {
-        return new ContextualBindingBuilder(this, this.getAlias(concrete));
+    when(concrete) {
+        return new ContextualBindingBuilder_1.default(this, this.getAlias(concrete));
     }
-
     /**
      * Get a closure to resolve the given type from the container.
      *
      * @param  string  $$abstract
      * @return \Closure
      */
-    public factory ($abstract: string): Closure {
+    factory($abstract) {
         return function () {
             return this.make($abstract);
         };
     }
-
     /**
      * An alias function name for make().
      *
@@ -622,10 +540,9 @@ export default class Container implements ContainerContract {
      * @param  array  $parameters
      * @return any
      */
-    public makeWith ($abstract: String, parameters: any[] = []): any {
+    makeWith($abstract, parameters = []) {
         return this.make($abstract, parameters);
     }
-
     /**
      * Resolve the given type from the container.
      *
@@ -633,10 +550,9 @@ export default class Container implements ContainerContract {
      * @param  Array<any>  parameters
      * @return any
      */
-    public make ($abstract: String, parameters: Array<any> = []): any {
+    make($abstract, parameters = []) {
         return this.resolve($abstract, parameters);
     }
-
     /**
      * Call the given Closure / class@method and inject its dependencies.
      *
@@ -645,24 +561,21 @@ export default class Container implements ContainerContract {
      * @param  string|null  defaultMethod
      * @return mixed
      */
-    public all (callback: any, parameters: Array<any>, defaultMethod: string) {
-
+    all(callback, parameters, defaultMethod) {
     }
-
     /**
      * Determine if the given $abstract type has been resolved.
      *
      * @param  string $abstract
      * @return boolean
      */
-    public resolved ($abstract: any): boolean {
+    resolved($abstract) {
         if (this.isAlias($abstract)) {
             $abstract = this.getAlias($abstract);
         }
         return _.isNull(this._resolved.get($abstract))
             || _.isNull(this._instances.get($abstract));
     }
-
     /**
      * Register a new resolving callback.
      *
@@ -670,20 +583,19 @@ export default class Container implements ContainerContract {
      * @param  \Closure|null  callback
      * @return void
      */
-    public resolving ($abstract: any, callback: any = null) {
+    resolving($abstract, callback = null) {
         if (_.isString($abstract)) {
             $abstract = this.getAlias($abstract);
         }
-
         if (_.isNull(callback) && _.isFunction($abstract)) {
             this._globalResolvingCallbacks.push($abstract);
-        } else {
-            let callbacks: Array<Closure> = this._resolvingCallbacks[$abstract] ?
+        }
+        else {
+            let callbacks = this._resolvingCallbacks[$abstract] ?
                 this._resolvingCallbacks[$abstract] : (this._resolvingCallbacks[$abstract] = []);
             callbacks.push(callback);
         }
     }
-
     /**
      * Register a new after resolving callback.
      *
@@ -691,14 +603,22 @@ export default class Container implements ContainerContract {
      * @param  \Closure|null  callback
      * @return void
      */
-    public afterResolving ($abstract: any, callback: any) {
+    afterResolving($abstract, callback) {
         if (_.isString($abstract)) {
             $abstract = this.getAlias($abstract);
         }
         if (_.isFunction($abstract) && _.isNull(callback)) {
             this._globalAfterResolvingCallbacks.push($abstract);
-        } else {
+        }
+        else {
             this._afterResolvingCallbacks[$abstract].push(callback);
         }
     }
 }
+/**
+ * The current globally available container (if any).
+ *
+ * @var static instance
+ */
+Container.instance = null;
+exports.default = Container;

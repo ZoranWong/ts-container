@@ -1,9 +1,9 @@
-import Container from './Container';
-import { Closure } from './Utils/Types';
-import * as _ from 'lodash';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const _ = require("lodash");
 const Global = this;
 // BoundMethod主要是为方法绑定相应实例
-export default class BoundMethod {
+class BoundMethod {
     /**
      * Call the given Closure / class@method and inject its dependencies.
      *
@@ -13,16 +13,14 @@ export default class BoundMethod {
      * @param  string|null  $defaultMethod
      * @return mixed
      */
-    public static call(container: Container, callback: Closure, parameters: Array<any> = [], defaultMethod: any = null) {
+    static call(container, callback, parameters = [], defaultMethod = null) {
         if (BoundMethod.isCallableWithAtSign(callback) || defaultMethod) {
             return BoundMethod.callClass(container, callback, parameters, defaultMethod);
         }
-
         return BoundMethod.callBoundMethod(container, callback, () => {
             return callback.apply(Global, BoundMethod.getMethodDependencies(container, callback, parameters));
         });
     }
-
     /**
      * Call a string reference to a class using Class@method syntax.
      *
@@ -34,10 +32,8 @@ export default class BoundMethod {
      *
      * @throws \InvalidArgumentException
      */
-    protected static callClass(container: Container, target: any, parameters: Array<any> = [], defaultMethod: any = null) {
-
+    static callClass(container, target, parameters = [], defaultMethod = null) {
     }
-
     /**
      * Call a method that has been bound to the container.
      *
@@ -46,33 +42,28 @@ export default class BoundMethod {
      * @param  any  default
      * @return mixed
      */
-    protected static callBoundMethod(container: Container, callback: Closure, defaultCallback: any) {
+    static callBoundMethod(container, callback, defaultCallback) {
         if (!_.isArray(callback)) {
             return _.isFunction(defaultCallback) ? defaultCallback() : defaultCallback;
         }
-
         // Here we need to turn the array callable into a Class@method string we can use to
         // examine the container and see if there are any method bindings for this given
         // method. If there are, we can call this method binding callback immediately.
         let method = BoundMethod.normalizeMethod(callback);
-
         if (container.hasMethodBinding(method)) {
-            return container.callMethodBinding(method, (callback as any)[0]);
+            return container.callMethodBinding(method, callback[0]);
         }
-
         return _.isFunction(defaultCallback) ? defaultCallback() : defaultCallback;
     }
-
     /**
      * Normalize the given callback into a Class@method string.
      *
      * @param  callable  $callback
      * @return string
      */
-    protected static normalizeMethod(callback: any) {
+    static normalizeMethod(callback) {
         return _.isString(callback[0]) ? "{$callback[0]}@{$callback[1]}" : callback[0][callback[1]];
     }
-
     /**
      * Get all dependencies for a given method.
      *
@@ -81,21 +72,17 @@ export default class BoundMethod {
      * @param  array  $parameters
      * @return array
      */
-    protected static getMethodDependencies(container: Container, callback: any, parameters: Array<any> = []) {
-        let dependencies: Array<any> = [];
-
+    static getMethodDependencies(container, callback, parameters = []) {
+        let dependencies = [];
     }
-
     /**
      * Get the proper reflection instance for the given callback.
      *
      * @param  callable|string  $callback
      * @return \ReflectionFunctionAbstract
      */
-    protected static getCallReflector(callback: any) {
-
+    static getCallReflector(callback) {
     }
-
     /**
      * Get the dependency for the given call parameter.
      *
@@ -105,17 +92,16 @@ export default class BoundMethod {
      * @param  array  $dependencies
      * @return mixed
      */
-    protected static addDependencyForCallParameter(container: Container, parameter: any, parameters: Array<any>, dependencies: Array<any>) {
-
+    static addDependencyForCallParameter(container, parameter, parameters, dependencies) {
     }
-
     /**
      * Determine if the given string is in Class@method syntax.
      *
      * @param  any  callback
      * @return bool
      */
-    protected static isCallableWithAtSign(callback: any) {
+    static isCallableWithAtSign(callback) {
         return _.isString(callback) && callback.indexOf('@') !== -1;
     }
 }
+exports.default = BoundMethod;

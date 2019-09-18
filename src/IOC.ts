@@ -3,6 +3,7 @@ import "reflect-metadata";
 import Ctor from "./Contracts/Ctor";
 import ConstructorInterface from "./Contracts/ConstructorInterface";
 import ReflectClass from "./ReflectClass";
+import * as md5 from "md5";
 
 
 /**
@@ -24,7 +25,7 @@ function beforeInject<T> (target: any, name: string = null): ConstructorInterfac
     if (name && container.bound(name)) {
         return;
     }
-    return {_name: name, _constructorStr: _constructorStr, _constructor: _constructor};
+    return {_name: name, _constructorStr: md5(_constructorStr), _constructor: _constructor};
 }
 
 /**
@@ -95,16 +96,22 @@ export function factory<T> (name: any): T {
     if (name instanceof String || typeof name === 'string') {
         return container.get(name);
     } else if (name instanceof Function) {
-        return container.get(name.toString());
+        return container.get(md5(name.toString()));
     }
     return null;
 }
 
+/**
+ * 工厂方法获取（创建）name对应的对象实例
+ * @param {String| T} name 类型或者别名
+ * @param {any[]} args 构造函数参数
+ * @return T
+ * */
 export function makeWith<T> (name: any, ...args: any[]): T {
     if (name instanceof String || typeof name === 'string') {
         return container.makeWith(name, ...args);
     } else if (name instanceof Function) {
-        return container.makeWith(name.toString(), ...args);
+        return container.makeWith(md5(name.toString()), ...args);
     }
     return null;
 }

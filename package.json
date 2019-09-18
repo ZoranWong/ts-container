@@ -8,7 +8,9 @@
     },
     "dependencies": {
         "@types/lodash": "^4.14.138",
+        "@types/md5": "^2.1.33",
         "lodash": "^4.17.11",
+        "md5": "^2.2.1",
         "reflect-metadata": "^0.1.13"
     },
     "devDependencies": {

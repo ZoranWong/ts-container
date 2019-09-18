@@ -1,9 +1,10 @@
-import {register, singleton, factory, makeWith} from "../src/IOC";
-import {ctorParamMetadata, isClosure, isReallyInstanceOf, isTypeOf} from "../src/Utils/Types";
-import {IOC} from "../src";
-import ReflectClass from "../src/ReflectClass";
-declare var test: Function;
-declare var expect: Function;
+import {register, singleton, factory, makeWith} from "../src";
+import {isClosure, isReallyInstanceOf, isTypeOf} from "../src/Utils/Types";
+import {container} from "../src/IOC";
+type F = (k:string,fn: Function )=> void ;
+type E = (p: boolean) => any ;
+declare var test: F ;
+declare var expect: E;
 @singleton()
 class OtherService {
     constructor (public a: number = 1 ) {

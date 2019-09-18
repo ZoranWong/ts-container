@@ -1,4 +1,4 @@
-import {register, singleton, factory, container} from "./IOC";
+import {register, singleton, factory, makeWith} from "./IOC";
 import Container from "./Container";
 /**
  * 注册IOC单例入口
@@ -32,4 +32,4 @@ export class IOC {
         singleton(name)(target);
     }
 }
-export  { register, singleton, factory};
+export  { register, singleton, factory, makeWith};

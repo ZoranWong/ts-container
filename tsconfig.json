@@ -8,7 +8,8 @@
         // "removeComments": true, // 是否移除注释
         "types": [ // 默认引入的类型声明
             "node", // 默认引入 node 的类型声明
-            "lodash"
+            "lodash",
+            "md5"
         ],
         "baseUrl": ".", // 工作根目录
         "paths": {

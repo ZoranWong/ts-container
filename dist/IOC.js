@@ -4,6 +4,8 @@ const Container_1 = require("./Container");
 require("reflect-metadata");
 const ReflectClass_1 = require("./ReflectClass");
 const md5 = require("md5");
+const _ = require("lodash");
+const Types_1 = require("./Utils/Types");
 /**
  * 容器对象
  * @var
@@ -47,10 +49,18 @@ function createInstance(_constructor, args) {
 /**
  * 将class（target）注册到容器中
  * @param {String} name 别名默认没有
+ * @param {Array<any>} constructorParamTypes 注册类型的构造函数参数类型（js版本使用），默认为null
  * @return {ClassDecorator}
  * */
-function register(name = null) {
+function register(name = null, constructorParamTypes = null) {
     return (target) => {
+        if (!_.isString(name) && !Types_1.isClass(name) && _.isArray(name)) {
+            constructorParamTypes = name;
+            name = null;
+        }
+        if (constructorParamTypes) {
+            Reflect.defineMetadata('design:paramtypes', constructorParamTypes, target);
+        }
         let { _name, _constructorStr, _constructor } = beforeInject(target, name);
         if (!exports.container.bound(_constructorStr))
             exports.container.bind(_constructorStr, (container, ...args) => {
@@ -65,10 +75,18 @@ exports.register = register;
 /**
  * 为class（target）注册单例对象
  * @param {String} name 别名默认没有
+ * @param {Array<any>} constructorParamTypes 注册类型的构造函数参数类型（js版本使用），默认为null
  * @return {ClassDecorator}
  * */
-function singleton(name = null) {
+function singleton(name = null, constructorParamTypes = null) {
     return (target) => {
+        if (!_.isString(name) && !Types_1.isClass(name) && _.isArray(name)) {
+            constructorParamTypes = name;
+            name = null;
+        }
+        if (constructorParamTypes) {
+            Reflect.defineMetadata('design:paramtypes', constructorParamTypes, target);
+        }
         let { _name, _constructorStr, _constructor } = beforeInject(target, name);
         if (!exports.container.bound(_constructorStr)) {
             exports.container.singleton(_constructorStr, (container, ...args) => {

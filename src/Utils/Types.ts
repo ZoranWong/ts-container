@@ -26,6 +26,10 @@ export function isClosure (closure: any) {
     return closure instanceof Function && !closure.toString().includes('class ');
 }
 
+export function isClass ($class: any) {
+    return $class ? $class.toString().includes('class ') : false;
+}
+
 export function ctorParamMetadata<T> (fn: any) {
     let str: String = fn.toString();
     let match = str.match(/constructor\(\s*([^\)]*)\)/m);

@@ -10,4 +10,5 @@ export declare function isReallyInstanceOf<T>(ctor: any, obj: T): boolean;
  * @return {boolean}
  * */
 export declare function isClosure(closure: any): boolean;
+export declare function isClass($class: any): any;
 export declare function ctorParamMetadata<T>(fn: any): any[];

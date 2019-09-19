@@ -5,7 +5,7 @@ type F = (k:string,fn: Function )=> void ;
 type E = (p: boolean) => any ;
 declare var test: F ;
 declare var expect: E;
-@singleton()
+@singleton
 class OtherService {
     constructor (public a: number = 1 ) {
     }
@@ -72,4 +72,13 @@ test('makeWith: makeWith(\'t2\', "test class T2").a === "test": false', () => {
 
 test('factory: factory(\'t2\').a === "test": true', () => {
     expect((factory('t2') as T2).a === "test").toBe(true);
+});
+
+@register
+class T3 {
+    constructor (public readonly a: string = 'test') {}
+}
+
+test('factory: factory(T3).a === "test": true', () => {
+    expect((factory(T3) as T3).a === "test").toBe(true);
 });

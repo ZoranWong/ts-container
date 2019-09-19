@@ -5,7 +5,8 @@ import ConstructorInterface from "./Contracts/ConstructorInterface";
 import ReflectClass from "./ReflectClass";
 import * as md5 from "md5";
 import * as _ from "lodash";
-import {isClass} from "./Utils/Types";
+import {isClass, isReallyInstanceOf} from "./Utils/Types";
+import {anyTypeAnnotation} from "@babel/types";
 
 
 /**
@@ -54,10 +55,10 @@ function createInstance<T> (_constructor: Ctor<T>, args: Array<any>) {
  * 将class（target）注册到容器中
  * @param {String} name 别名默认没有
  * @param {Array<any>} constructorParamTypes 注册类型的构造函数参数类型（js版本使用），默认为null
- * @return {ClassDecorator}
+ * @return {any}
  * */
-export function register (name: any = null, constructorParamTypes: Array<any> = null): ClassDecorator {
-    return (target: any) => {
+export function register (name: any = null, constructorParamTypes: Array<any> = null): any {
+    let register =  (target: any) => {
         if(!_.isString(name) && !isClass(name) && _.isArray(name)) {
             constructorParamTypes = name;
             name = null;
@@ -74,16 +75,22 @@ export function register (name: any = null, constructorParamTypes: Array<any> = 
             container.alias(_constructorStr, _name);
         }
     }
+
+    if(!_.isString(name) && isClass(name)) {
+        register(name);
+    }else{
+        return register;
+    }
 }
 
 /**
  * 为class（target）注册单例对象
- * @param {String} name 别名默认没有
+ * @param {String|Ctor<T>} name 别名默认没有
  * @param {Array<any>} constructorParamTypes 注册类型的构造函数参数类型（js版本使用），默认为null
- * @return {ClassDecorator}
+ * @return {any}
  * */
-export function singleton (name: string = null, constructorParamTypes: Array<any> = null): ClassDecorator {
-    return (target: any) => {
+export function singleton (name: any = null, constructorParamTypes: Array<any> = null): any {
+    let singleton =  (target: any) => {
         if(!_.isString(name) && !isClass(name) && _.isArray(name)) {
             constructorParamTypes = name;
             name = null;
@@ -101,7 +108,11 @@ export function singleton (name: string = null, constructorParamTypes: Array<any
         if (_name) {
             container.alias(_constructorStr, _name);
         }
-
+    }
+    if(!_.isString(name) && isClass(name)) {
+        singleton(name);
+    }else{
+        return singleton;
     }
 }
 

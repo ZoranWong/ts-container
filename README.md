@@ -9,6 +9,14 @@
 - makeWith(alias: string|T, ... args: any[]) 通过别名或者类型获取注册对象，同时可以想构造函数提供参数，单例模式只有在系统第一次获取对象时才会调用构造函数，所以可以把单例模式对象在系统启动时提供参数完成对象创建
 ````typescript
 import {register, singleton, makeWith, factory} from "pretty-ts-container";
+@register // @register()一样的效果
+ class T1 {
+   constructor ( public a: number = 0){}
+ }
+ @singleton // @singleton()一样的效果
+  class T2 {
+    constructor ( public a: number = 0){}
+  }
 // 注册Test类，Test将拥有别名的
 @register('test')
  class Test {
@@ -43,6 +51,14 @@ import {register, singleton, makeWith, factory} from "pretty-ts-container";
 - makeWith(alias: string|T, ... args: any[]) 通过别名或者类型获取注册对象，同时可以想构造函数提供参数，单例模式只有在系统第一次获取对象时才会调用构造函数，所以可以把单例模式对象在系统启动时提供参数完成对象创建
 ````javascript
 import {register, singleton, makeWith, factory} from "pretty-ts-container";
+@register // @register()一样的效果
+ class T1 {
+   constructor (  a = 0){this.a = a;}
+ }
+ @singleton // @singleton()一样的效果
+  class T2 {
+    constructor (  a = 0){this.a = a;}
+  }
 // 注册Test类，Test将拥有别名的
 @register('test', [Number])
  class Test {

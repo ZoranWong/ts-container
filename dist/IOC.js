@@ -50,10 +50,10 @@ function createInstance(_constructor, args) {
  * 将class（target）注册到容器中
  * @param {String} name 别名默认没有
  * @param {Array<any>} constructorParamTypes 注册类型的构造函数参数类型（js版本使用），默认为null
- * @return {ClassDecorator}
+ * @return {any}
  * */
 function register(name = null, constructorParamTypes = null) {
-    return (target) => {
+    let register = (target) => {
         if (!_.isString(name) && !Types_1.isClass(name) && _.isArray(name)) {
             constructorParamTypes = name;
             name = null;
@@ -70,16 +70,22 @@ function register(name = null, constructorParamTypes = null) {
             exports.container.alias(_constructorStr, _name);
         }
     };
+    if (!_.isString(name) && Types_1.isClass(name)) {
+        register(name);
+    }
+    else {
+        return register;
+    }
 }
 exports.register = register;
 /**
  * 为class（target）注册单例对象
- * @param {String} name 别名默认没有
+ * @param {String|Ctor<T>} name 别名默认没有
  * @param {Array<any>} constructorParamTypes 注册类型的构造函数参数类型（js版本使用），默认为null
- * @return {ClassDecorator}
+ * @return {any}
  * */
 function singleton(name = null, constructorParamTypes = null) {
-    return (target) => {
+    let singleton = (target) => {
         if (!_.isString(name) && !Types_1.isClass(name) && _.isArray(name)) {
             constructorParamTypes = name;
             name = null;
@@ -97,6 +103,12 @@ function singleton(name = null, constructorParamTypes = null) {
             exports.container.alias(_constructorStr, _name);
         }
     };
+    if (!_.isString(name) && Types_1.isClass(name)) {
+        singleton(name);
+    }
+    else {
+        return singleton;
+    }
 }
 exports.singleton = singleton;
 /**

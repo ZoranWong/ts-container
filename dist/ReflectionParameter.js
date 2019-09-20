@@ -31,7 +31,7 @@ class ReflectionParameter {
      * */
     getParamInstance(param) {
         if (_.isArray(param)) {
-            let paramInstances = param.map((v) => {
+            return param.map((v) => {
                 // 参数不可注入
                 if (v instanceof Array) {
                     return this.getParamInstance(v);
@@ -45,7 +45,6 @@ class ReflectionParameter {
                     return new v();
                 }
             });
-            return paramInstances;
         }
         else {
             let instance = IOC_1.factory(param);

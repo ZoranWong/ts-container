@@ -1,7 +1,6 @@
-export default class ReflectionClass {
-    private _class;
-    private _className;
-    private _parameters;
+import ReflectionFunction from "./ReflectionFunction";
+export default class ReflectionClass extends ReflectionFunction {
+    protected _className: string;
     constructor($class: any);
-    getParameters(): any[];
+    protected paramParse(): any[];
 }

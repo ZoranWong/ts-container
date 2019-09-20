@@ -134,10 +134,10 @@ exports.factory = factory;
  * */
 function makeWith(name, ...args) {
     if (name instanceof String || typeof name === 'string') {
-        return exports.container.makeWith(name, ...args);
+        return exports.container.makeWith(name, args);
     }
     else if (name instanceof Function) {
-        return exports.container.makeWith(md5(name.toString()), ...args);
+        return exports.container.makeWith(md5(name.toString()), args);
     }
     return null;
 }

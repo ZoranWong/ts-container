@@ -15,13 +15,14 @@ class ReflectionParameter {
         return this._class;
     }
     getClassName() {
-        return this._class.name;
+        return this.getClass() ? this.getClass().name : null;
     }
     getDefaultValue() {
         return this._defaultValue;
     }
     getValue() {
-        return this.isDefaultValueAvailable() ? this.getDefaultValue() : this.getParamInstance(this._class);
+        return this.isDefaultValueAvailable() ? this.getDefaultValue() :
+            (this.getClassName() && this.getClassName() !== 'Object' ? this.getParamInstance(this.getClass()) : null);
     }
     /**
      * 获取参数列表

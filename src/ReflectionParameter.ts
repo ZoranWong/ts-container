@@ -16,7 +16,7 @@ export default class ReflectionParameter<T> {
     }
 
     public getClassName() {
-        return this._class.name;
+        return this.getClass() ? this.getClass().name : null;
     }
 
     public getDefaultValue() {
@@ -24,7 +24,9 @@ export default class ReflectionParameter<T> {
     }
 
     public getValue() {
-        return this.isDefaultValueAvailable() ? this.getDefaultValue() : this.getParamInstance(this._class);
+        console.log(this.getClass(), this.getClassName());
+        return this.isDefaultValueAvailable() ? this.getDefaultValue() :
+            (this.getClassName() && this.getClassName() !== 'Object' ? this.getParamInstance(this.getClass()) : null);
     }
 
     /**

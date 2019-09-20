@@ -27,7 +27,6 @@ export default class ReflectionFunction {
     }
 
     protected paramParse(): any[] {
-        console.log('----');
         return [];
     }
 }

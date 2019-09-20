@@ -1,4 +1,4 @@
-import {Closure, ctorParamMetadata} from './Utils/Types';
+import {Closure} from './Utils/Types';
 import ReflectionParameter from './ReflectionParameter';
 import IOCError from "./Expceptions/IOCError";
 export default class ReflectionFunction {

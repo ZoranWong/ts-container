@@ -1,5 +1,5 @@
 import {factory} from "./IOC";
-import _ = require("lodash");
+import * as _ from "lodash";
 
 export default class ReflectionParameter<T> {
     private _class: any = null;
@@ -35,7 +35,7 @@ export default class ReflectionParameter<T> {
      * */
     protected getParamInstance (param: any): any {
         if(_.isArray(param)) {
-            let paramInstances: Array<any> = param.map((v: Function) => {
+           return param.map((v: Function) => {
                 // 参数不可注入
                 if (v instanceof Array) {
                     return this.getParamInstance(v as any);
@@ -48,7 +48,6 @@ export default class ReflectionParameter<T> {
                     return new (v as any)();
                 }
             });
-            return paramInstances;
         }else{
             let instance = factory(param);
             if(instance){

@@ -1,5 +1,4 @@
-### [pretty-ts-container](https://www.npmjs.com/package/pretty-ts-container) is a container which can makes classes and objects to be organized and managed easier, and which provides a decorator-style IOC for programming.And also all classes finally will be registered into a global object (which is a 
-Container type constant.).
+### [pretty-ts-container](https://www.npmjs.com/package/pretty-ts-container) is a container which can makes classes and objects to be organized and managed easier, and which provides a decorator-style IOC for programming.And also all classes finally will be registered into a global object (which is a Container type constant.).
 ##### Install
 - npm install pretty-ts-container --save
 - npm i pretty-ts-container --save

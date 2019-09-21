@@ -1,3 +1,4 @@
+## [英文](/README.md)
 ### [pretty-ts-container](https://www.npmjs.com/package/pretty-ts-container)一款提供装饰器风格的类型依赖注入方式的类与对象管理容器，所有类型最后都会被注册到一个全局的container对象里面。
 ##### 安装
 - npm install pretty-ts-container --save

@@ -5,8 +5,7 @@ import ConstructorInterface from "./Contracts/ConstructorInterface";
 import ReflectClass from "./ReflectClass";
 import * as md5 from "md5";
 import * as _ from "lodash";
-import {isClass, isReallyInstanceOf} from "./Utils/Types";
-import {anyTypeAnnotation} from "@babel/types";
+import {isClass} from "./Utils/Types";
 
 
 /**

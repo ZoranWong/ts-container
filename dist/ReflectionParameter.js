@@ -15,13 +15,14 @@ class ReflectionParameter {
         return this._class;
     }
     getClassName() {
-        return this._class.name;
+        return this.getClass() ? this.getClass().name : null;
     }
     getDefaultValue() {
         return this._defaultValue;
     }
     getValue() {
-        return this.isDefaultValueAvailable() ? this.getDefaultValue() : this.getParamInstance(this._class);
+        return this.isDefaultValueAvailable() ? this.getDefaultValue() :
+            (this.getClassName() && this.getClassName() !== 'Object' ? this.getParamInstance(this.getClass()) : null);
     }
     /**
      * 获取参数列表
@@ -30,7 +31,7 @@ class ReflectionParameter {
      * */
     getParamInstance(param) {
         if (_.isArray(param)) {
-            let paramInstances = param.map((v) => {
+            return param.map((v) => {
                 // 参数不可注入
                 if (v instanceof Array) {
                     return this.getParamInstance(v);
@@ -44,7 +45,6 @@ class ReflectionParameter {
                     return new v();
                 }
             });
-            return paramInstances;
         }
         else {
             let instance = IOC_1.factory(param);

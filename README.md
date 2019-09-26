@@ -1,8 +1,11 @@
-### pretty-container一款提供装饰器风格的类型依赖注入方式的类管理容器，所用的类型最后都会被注册到一个全局的container对象里面。
+
+## [英文](/README.en.md)
+### [pretty-container](https://www.npmjs.com/package/pretty-container)一款提供装饰器风格的类型依赖注入方式的类与对象管理容器，所有类型最后都会被注册到一个全局的container对象里面。
 ##### 安装
 - npm install pretty-container --save
 - npm i pretty-container --save
-##### API介绍(Typescript)
+##### API介绍
+###### Typescript版
 - register(alias: string = null) 将一个类注册到容器内
 - singleton(alias: string = null) 将一个类型注册成为单例
 - factory(alias: string|T) 通过别名或者类获取注册的对象
@@ -44,7 +47,7 @@ import {register, singleton, makeWith, factory} from "pretty-container";
  (makeWith(Test1, 9) as Test1).b // 9
 ````
 
-##### API介绍(javascript)
+###### Javascript(es6版)
 - register(alias = null, constructorParamTypes) 将一个类注册到容器内, alias别名，不填写第一个参数为数组时其值会赋给constructorParamTypes(构造函数参数类型数组，定义构造函数参数类型),constructorParamTypes数组类型
 - singleton(alias = null, constructorParamTypes) 将一个类型注册成为单例， alias别名，不填写第一个参数为数组时其值会赋给constructorParamTypes(构造函数参数类型数组，定义构造函数参数类型)constructorParamTypes数组类型
 - factory(alias: string|T) 通过别名或者类获取注册的对象

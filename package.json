@@ -1,5 +1,5 @@
 {
-    "name": "pretty-ts-container",
+    "name": "pretty-container",
     "version": "0.0.8",
     "description": "This container liberay for ts",
     "main": "dist/index.js",

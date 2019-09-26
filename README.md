@@ -1,14 +1,14 @@
-### pretty-ts-container一款提供装饰器风格的类型依赖注入方式的类管理容器，所用的类型最后都会被注册到一个全局的container对象里面。
+### pretty-container一款提供装饰器风格的类型依赖注入方式的类管理容器，所用的类型最后都会被注册到一个全局的container对象里面。
 ##### 安装
-- npm install pretty-ts-container --save
-- npm i pretty-ts-container --save
+- npm install pretty-container --save
+- npm i pretty-container --save
 ##### API介绍(Typescript)
 - register(alias: string = null) 将一个类注册到容器内
 - singleton(alias: string = null) 将一个类型注册成为单例
 - factory(alias: string|T) 通过别名或者类获取注册的对象
 - makeWith(alias: string|T, ... args: any[]) 通过别名或者类型获取注册对象，同时可以想构造函数提供参数，单例模式只有在系统第一次获取对象时才会调用构造函数，所以可以把单例模式对象在系统启动时提供参数完成对象创建
 ````typescript
-import {register, singleton, makeWith, factory} from "pretty-ts-container";
+import {register, singleton, makeWith, factory} from "pretty-container";
 @register // @register()一样的效果
  class T1 {
    constructor ( public a: number = 0){}
@@ -50,7 +50,7 @@ import {register, singleton, makeWith, factory} from "pretty-ts-container";
 - factory(alias: string|T) 通过别名或者类获取注册的对象
 - makeWith(alias: string|T, ... args: any[]) 通过别名或者类型获取注册对象，同时可以想构造函数提供参数，单例模式只有在系统第一次获取对象时才会调用构造函数，所以可以把单例模式对象在系统启动时提供参数完成对象创建
 ````javascript
-import {register, singleton, makeWith, factory} from "pretty-ts-container";
+import {register, singleton, makeWith, factory} from "pretty-container";
 @register // @register()一样的效果
  class T1 {
    constructor (  a = 0){this.a = a;}

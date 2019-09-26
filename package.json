@@ -1,6 +1,6 @@
 {
     "name": "pretty-container",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "This container liberay for ts",
     "main": "dist/index.js",
     "directories": {

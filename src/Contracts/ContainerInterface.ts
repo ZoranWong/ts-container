@@ -1,3 +1,4 @@
+"use strict";
 export default interface ContainerInterface {
     /**
     * Finds an entry of the container by its identifier and returns it.

@@ -1,6 +1,6 @@
+"use strict";
 import {factory} from "./IOC";
 import * as _ from "lodash";
-
 export default class ReflectionParameter<T> {
     private _class: any = null;
     private _defaultValue: T = null;

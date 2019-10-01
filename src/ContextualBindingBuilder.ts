@@ -1,3 +1,4 @@
+"use strict";
 import ContextualBindingBuilderContract from './Contracts/ContextualBindingBuilder';
 import Container from './Container';
 export default class ContextualBindingBuilder implements ContextualBindingBuilderContract {

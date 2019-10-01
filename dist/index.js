@@ -26,24 +26,24 @@ let IOC = class IOC {
      * @param {any} name 注册类型别名（或者注册类型 target = null时）
      * @param {any} target 注册类型
     * */
-    static register(name, target = null) {
+    register(name, target = null, constructorParamTypes = null) {
         if (!target) {
             target = name;
             name = null;
         }
-        IOC_1.register(name)(target);
+        IOC_1.register(name, constructorParamTypes)(target);
     }
     /**
      * 静态实例类型单例注册函数
      * @param {any} name 注册类型别名（或者注册类型 target = null时）
      * @param {any} target 注册类型
      * */
-    static singleton(name, target = null) {
+    singleton(name, target = null, constructorParamTypes = null) {
         if (!target) {
             target = name;
             name = null;
         }
-        IOC_1.singleton(name)(target);
+        IOC_1.singleton(name, constructorParamTypes)(target);
     }
 };
 IOC = __decorate([
@@ -51,3 +51,5 @@ IOC = __decorate([
     __metadata("design:paramtypes", [String])
 ], IOC);
 exports.IOC = IOC;
+const ioc = IOC_1.factory(IOC);
+exports.ioc = ioc;

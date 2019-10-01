@@ -1,7 +1,5 @@
-import Ctor from "../Contracts/Ctor";
-
+"use strict";
 export type Closure = Function;
-
 export function isTypeOf (obj: any, $class: string) {
     if (obj.constructor.toString() === $class || obj.constructor.toString().includes($class)) {
         return true;

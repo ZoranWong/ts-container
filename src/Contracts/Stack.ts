@@ -1,3 +1,4 @@
+"use strict";
 import {end} from "../Utils/array";
 export default class Stack {
     private _list: any[];

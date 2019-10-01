@@ -1,3 +1,4 @@
+"use strict";
 import {ctorParamMetadata} from './Utils/Types';
 import ReflectionFunction from "./ReflectionFunction";
 export default class ReflectionClass extends ReflectionFunction{

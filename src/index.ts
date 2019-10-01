@@ -1,3 +1,4 @@
+"use strict";
 import {register, singleton, factory, makeWith} from "./IOC";
 
 /**
@@ -11,12 +12,12 @@ export class IOC {
      * @param {any} name 注册类型别名（或者注册类型 target = null时）
      * @param {any} target 注册类型
     * */
-    public static register(name: any, target: any = null) {
+    public  register(name: any, target: any = null, constructorParamTypes: any[] = null) {
         if(!target) {
             target = name;
             name = null;
         }
-        register(name)(target);
+        register(name, constructorParamTypes)(target);
     }
 
     /**
@@ -24,12 +25,13 @@ export class IOC {
      * @param {any} name 注册类型别名（或者注册类型 target = null时）
      * @param {any} target 注册类型
      * */
-    public static singleton (name: any, target: any = null) {
+    public  singleton (name: any, target: any = null, constructorParamTypes: any[] = null) {
         if(!target) {
             target = name;
             name = null;
         }
-        singleton(name)(target);
+        singleton(name, constructorParamTypes)(target);
     }
 }
-export  { register, singleton, factory, makeWith};
+const ioc: IOC = factory(IOC);
+export  { register, singleton, factory, makeWith, ioc};

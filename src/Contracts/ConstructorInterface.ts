@@ -1,5 +1,5 @@
+"use strict";
 import Ctor from "./Ctor";
-
 /**
  * 构造函数接口拓展
  * */

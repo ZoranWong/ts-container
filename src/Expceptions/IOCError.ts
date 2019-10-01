@@ -1,3 +1,4 @@
+"use strict";
 export default class IOCError implements Error {
     message: string;
     name: string;

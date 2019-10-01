@@ -1,3 +1,4 @@
+"use strict";
 import {Closure} from './Utils/Types';
 import ReflectionParameter from './ReflectionParameter';
 import IOCError from "./Expceptions/IOCError";

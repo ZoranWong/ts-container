@@ -1,3 +1,4 @@
+"use strict";
 import Container from './Container';
 import "reflect-metadata";
 import Ctor from "./Contracts/Ctor";

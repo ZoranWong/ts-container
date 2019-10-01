@@ -1,3 +1,4 @@
+"use strict";
 import Container from './Container';
 import { Closure } from './Utils/Types';
 import * as _ from 'lodash';

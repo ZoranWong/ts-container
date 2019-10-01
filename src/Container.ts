@@ -1,3 +1,4 @@
+"use strict";
 import ContainerContract from './Contracts/Container';
 import {Closure, isTypeOf} from './Utils/Types';
 import ContextualBindingBuilder from './ContextualBindingBuilder';

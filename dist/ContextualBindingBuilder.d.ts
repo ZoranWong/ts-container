@@ -22,23 +22,23 @@ export default class ContextualBindingBuilder implements ContextualBindingBuilde
     /**
      * Create a new contextual binding builder.
      *
-     * @param  \Illuminate\Container\Container  $container
-     * @param  string  $concrete
      * @return void
+     * @param container
+     * @param concrete
      */
     constructor(container: Container, concrete: string);
     /**
      * Define the abstract target that depends on the context.
      *
-     * @param  string  $abstract
      * @return $this
+     * @param abstract
      */
     needs(abstract: any): this;
     /**
      * Define the implementation for the contextual binding.
      *
-     * @param  \Closure|string  implementation
      * @return void
+     * @param implementation
      */
     give(implementation: any): void;
 }

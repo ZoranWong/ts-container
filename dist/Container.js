@@ -5,7 +5,7 @@ const ContextualBindingBuilder_1 = require("./ContextualBindingBuilder");
 const _ = require("lodash");
 const Stack_1 = require("./Contracts/Stack");
 const array_1 = require("./Utils/array");
-const TMap_1 = require("./TMap");
+const StrKeyMap_1 = require("./StrKeyMap");
 class Container {
     constructor() {
         /**
@@ -13,49 +13,49 @@ class Container {
          *
          * @var Map<string, any> _resolved
          */
-        this._resolved = new TMap_1.default();
+        this._resolved = new StrKeyMap_1.default();
         /**
          * The container's bindings.
          *
          * @var array
          */
-        this._bindings = new TMap_1.default();
+        this._bindings = new StrKeyMap_1.default();
         /**
          * The container's method bindings.
          *
          * @var array
          */
-        this._methodBindings = new TMap_1.default();
+        this._methodBindings = new StrKeyMap_1.default();
         /**
          * The container's shared instances.
          *
          * @var array
          */
-        this._instances = new TMap_1.default();
+        this._instances = new StrKeyMap_1.default();
         /**
          * The registered type aliases.
          *
          * @var array
          */
-        this._aliases = new TMap_1.default();
+        this._aliases = new StrKeyMap_1.default();
         /**
          * The registered aliases keyed by the $abstract name.
          *
          * @var array
          */
-        this._$abstractAliases = new TMap_1.default();
+        this._$abstractAliases = new StrKeyMap_1.default();
         /**
          * The extension closures for services.
          *
          * @var array
          */
-        this._extenders = new TMap_1.default();
+        this._extenders = new StrKeyMap_1.default();
         /**
          * All of the registered tags.
          *
          * @var array
          */
-        this._tags = new TMap_1.default();
+        this._tags = new StrKeyMap_1.default();
         /**
          * The stack of concretions currently being built.
          *
@@ -79,7 +79,7 @@ class Container {
          *
          * @var array
          */
-        this._reboundCallbacks = new TMap_1.default();
+        this._reboundCallbacks = new StrKeyMap_1.default();
         /**
          * All of the global resolving callbacks.
          *
@@ -138,8 +138,8 @@ class Container {
     /**
      * Determine if the container has a method binding.
      *
-     * @param  string  $method
      * @return boolean
+     * @param method
      */
     hasMethodBinding(method) {
         return !_.isNull(this._methodBindings.get(method));
@@ -147,9 +147,9 @@ class Container {
     /**
      * Get the method binding for the given method.
      *
-     * @param  string  method
-     * @param  any  instance
      * @return any
+     * @param method
+     * @param instance
      */
     callMethodBinding(method, instance) {
         return this._methodBindings.get(method).apply(instance, this);
@@ -157,9 +157,9 @@ class Container {
     /**
      * Fire all of the resolving callbacks.
      *
-     * @param  string  $abstract
-     * @param  any   object
      * @return void
+     * @param $abstract
+     * @param object
      */
     fireResolvingCallbacks($abstract, object) {
         this.fireCallbackArray(object, this._globalResolvingCallbacks);
@@ -196,8 +196,8 @@ class Container {
     /**
      * Get the extender callbacks for a given type.
      *
-     * @param  string  $$abstract
      * @return array
+     * @param $abstract
      */
     getExtenders($abstract) {
         $abstract = this.getAlias($abstract);
@@ -226,8 +226,8 @@ class Container {
     /**
      * Get the contextual concrete binding for the given $abstract.
      *
-     * @param  string  $abstract
      * @return string|null
+     * @param $abstract
      */
     getContextualConcrete($abstract) {
         let binding = this.findInContextualBindings($abstract);
@@ -250,8 +250,8 @@ class Container {
     /**
      * Find the concrete binding for the given $abstract in the contextual binding array.
      *
-     * @param  string  $abstract
      * @return string|null
+     * @param $abstract
      */
     findInContextualBindings($abstract) {
         let end = this._buildStack.end();
@@ -280,9 +280,9 @@ class Container {
     /**
      * Alias a type to a different name.
      *
-     * @param  string  $abstract
-     * @param  string  alias
      * @return void
+     * @param $abstract
+     * @param alias
      */
     alias($abstract, alias) {
         this._aliases.set(alias, $abstract);
@@ -294,10 +294,10 @@ class Container {
     /**
      * Get the alias for an $abstract if available.
      *
-     * @param  string  $$abstract
      * @return string
      *
      * @throws \LogicException
+     * @param $abstract
      */
     getAlias($abstract) {
         let _aliases = this._aliases.get($abstract);
@@ -312,9 +312,9 @@ class Container {
     /**
      * Assign a set of tags to a given binding.
      *
-     * @param  array|string  $abstracts
-     * @param  array|any   ...tags
      * @return void
+     * @param $abstracts
+     * @param tags
      */
     tag($abstracts, ...tags) {
         tags.forEach((tag) => {
@@ -330,8 +330,8 @@ class Container {
     /**
      * Resolve all of the bindings for a given tag.
      *
-     * @param  string  tag
      * @return array
+     * @param tag
      */
     tagged(tag) {
         let results = [];
@@ -432,10 +432,10 @@ class Container {
     /**
      * Register a binding if it hasn't already been registered.
      *
-     * @param  string  $abstract
-     * @param  \Closure|string|null  concrete
-     * @param  boolean  shared
      * @return void
+     * @param $abstract
+     * @param concrete
+     * @param shared
      */
     bindIf($abstract, concrete = null, shared = false) {
         if (!this.bound($abstract)) {
@@ -445,9 +445,9 @@ class Container {
     /**
      * Register a shared binding in the container.
      *
-     * @param  string  $abstract
-     * @param  Closure|string|null  concrete
      * @return void
+     * @param $abstract
+     * @param concrete
      */
     singleton($abstract, concrete = null) {
         this.bind($abstract, concrete, true);
@@ -455,11 +455,11 @@ class Container {
     /**
      * "Extend" an $abstract type in the container.
      *
-     * @param  string    $abstract
-     * @param  Closure  closure
      * @return void
      *
      * @throws \InvalidArgumentException
+     * @param $abstract
+     * @param closure
      */
     extend($abstract, closure) {
         $abstract = this.getAlias($abstract);
@@ -480,9 +480,9 @@ class Container {
     /**
      * Register an existing instance as shared in the container.
      *
-     * @param  string  $abstract
-     * @param  any   instance
      * @return any
+     * @param $abstract
+     * @param instance
      */
     instance($abstract, instance) {
         this.remove$abstractAlias($abstract);
@@ -497,8 +497,8 @@ class Container {
     /**
      * Remove an alias from the contextual binding alias cache.
      *
-     * @param  string  $searched
      * @return void
+     * @param searched
      */
     remove$abstractAlias(searched) {
         if (_.isEmpty(this._aliases.get(searched))) {
@@ -516,8 +516,8 @@ class Container {
     /**
      * Define a contextual binding.
      *
-     * @param  string  $concrete
      * @return ContextualBindingBuilder
+     * @param concrete
      */
     when(concrete) {
         return new ContextualBindingBuilder_1.default(this, this.getAlias(concrete));
@@ -525,8 +525,8 @@ class Container {
     /**
      * Get a closure to resolve the given type from the container.
      *
-     * @param  string  $$abstract
      * @return \Closure
+     * @param $abstract
      */
     factory($abstract) {
         return function () {
@@ -536,9 +536,9 @@ class Container {
     /**
      * An alias function name for make().
      *
-     * @param  string  $$abstract
-     * @param  array  $parameters
      * @return any
+     * @param $abstract
+     * @param parameters
      */
     makeWith($abstract, parameters = []) {
         return this.make($abstract, parameters);
@@ -546,9 +546,9 @@ class Container {
     /**
      * Resolve the given type from the container.
      *
-     * @param  string  $abstract
-     * @param  Array<any>  parameters
      * @return any
+     * @param $abstract
+     * @param parameters
      */
     make($abstract, parameters = []) {
         return this.resolve($abstract, parameters);
@@ -556,18 +556,18 @@ class Container {
     /**
      * Call the given Closure / class@method and inject its dependencies.
      *
-     * @param  callable|string  callback
-     * @param  array  parameters
-     * @param  string|null  defaultMethod
      * @return mixed
+     * @param callback
+     * @param parameters
+     * @param defaultMethod
      */
     all(callback, parameters, defaultMethod) {
     }
     /**
      * Determine if the given $abstract type has been resolved.
      *
-     * @param  string $abstract
      * @return boolean
+     * @param $abstract
      */
     resolved($abstract) {
         if (this.isAlias($abstract)) {
@@ -579,9 +579,9 @@ class Container {
     /**
      * Register a new resolving callback.
      *
-     * @param  \Closure|string  $abstract
-     * @param  \Closure|null  callback
      * @return void
+     * @param $abstract
+     * @param callback
      */
     resolving($abstract, callback = null) {
         if (_.isString($abstract)) {
@@ -599,9 +599,9 @@ class Container {
     /**
      * Register a new after resolving callback.
      *
-     * @param  \Closure|string  $abstract
-     * @param  \Closure|null  callback
      * @return void
+     * @param $abstract
+     * @param callback
      */
     afterResolving($abstract, callback) {
         if (_.isString($abstract)) {

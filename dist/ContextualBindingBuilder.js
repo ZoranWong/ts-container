@@ -4,9 +4,9 @@ class ContextualBindingBuilder {
     /**
      * Create a new contextual binding builder.
      *
-     * @param  \Illuminate\Container\Container  $container
-     * @param  string  $concrete
      * @return void
+     * @param container
+     * @param concrete
      */
     constructor(container, concrete) {
         this.concrete = concrete;
@@ -15,8 +15,8 @@ class ContextualBindingBuilder {
     /**
      * Define the abstract target that depends on the context.
      *
-     * @param  string  $abstract
      * @return $this
+     * @param abstract
      */
     needs(abstract) {
         this.need = abstract;
@@ -25,8 +25,8 @@ class ContextualBindingBuilder {
     /**
      * Define the implementation for the contextual binding.
      *
-     * @param  \Closure|string  implementation
      * @return void
+     * @param implementation
      */
     give(implementation) {
         this.container.addContextualBinding(this.concrete, this.need, implementation);

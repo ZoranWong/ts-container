@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import Binding from './Contracts/Binding';
 import Stack from "./Contracts/Stack";
 import {end} from "./Utils/array";
-import TMap from "./TMap";
+import StrKeyMap from "./StrKeyMap";
 
 export default class Container implements ContainerContract {
     /**
@@ -21,56 +21,56 @@ export default class Container implements ContainerContract {
      *
      * @var Map<string, any> _resolved
      */
-    protected _resolved: TMap<any> = new TMap<any>();
+    protected _resolved: StrKeyMap<any> = new StrKeyMap<any>();
 
     /**
      * The container's bindings.
      *
      * @var array
      */
-    protected _bindings: TMap<Binding> = new TMap<Binding>();
+    protected _bindings: StrKeyMap<Binding> = new StrKeyMap<Binding>();
 
     /**
      * The container's method bindings.
      *
      * @var array
      */
-    protected _methodBindings: TMap<Closure> = new TMap<Closure>();
+    protected _methodBindings: StrKeyMap<Closure> = new StrKeyMap<Closure>();
 
     /**
      * The container's shared instances.
      *
      * @var array
      */
-    protected _instances: TMap<any> = new TMap<any>();
+    protected _instances: StrKeyMap<any> = new StrKeyMap<any>();
 
     /**
      * The registered type aliases.
      *
      * @var array
      */
-    protected _aliases: TMap<any> = new TMap<any>();
+    protected _aliases: StrKeyMap<any> = new StrKeyMap<any>();
 
     /**
      * The registered aliases keyed by the $abstract name.
      *
      * @var array
      */
-    protected _$abstractAliases: TMap<Array<string>> = new TMap<Array<string>>();
+    protected _$abstractAliases: StrKeyMap<Array<string>> = new StrKeyMap<Array<string>>();
 
     /**
      * The extension closures for services.
      *
      * @var array
      */
-    protected _extenders: TMap<Array<any>> = new TMap<Array<any>>();
+    protected _extenders: StrKeyMap<Array<any>> = new StrKeyMap<Array<any>>();
 
     /**
      * All of the registered tags.
      *
      * @var array
      */
-    protected _tags: TMap<Array<any>> = new TMap<Array<any>>();
+    protected _tags: StrKeyMap<Array<any>> = new StrKeyMap<Array<any>>();
 
     /**
      * The stack of concretions currently being built.
@@ -98,7 +98,7 @@ export default class Container implements ContainerContract {
      *
      * @var array
      */
-    protected _reboundCallbacks: TMap<Array<Closure>> = new TMap<Array<Closure>>();
+    protected _reboundCallbacks: StrKeyMap<Array<Closure>> = new StrKeyMap<Array<Closure>>();
 
     /**
      * All of the global resolving callbacks.
@@ -177,8 +177,8 @@ export default class Container implements ContainerContract {
     /**
      * Determine if the container has a method binding.
      *
-     * @param  string  $method
      * @return boolean
+     * @param method
      */
     public hasMethodBinding (method: string): boolean {
         return !_.isNull(this._methodBindings.get(method));
@@ -187,9 +187,9 @@ export default class Container implements ContainerContract {
     /**
      * Get the method binding for the given method.
      *
-     * @param  string  method
-     * @param  any  instance
      * @return any
+     * @param method
+     * @param instance
      */
     public callMethodBinding (method: string, instance: any): any {
         return this._methodBindings.get(method).apply(instance, this);
@@ -198,9 +198,9 @@ export default class Container implements ContainerContract {
     /**
      * Fire all of the resolving callbacks.
      *
-     * @param  string  $abstract
-     * @param  any   object
      * @return void
+     * @param $abstract
+     * @param object
      */
     protected fireResolvingCallbacks ($abstract: string, object: any) {
         this.fireCallbackArray(object, this._globalResolvingCallbacks);
@@ -249,8 +249,8 @@ export default class Container implements ContainerContract {
     /**
      * Get the extender callbacks for a given type.
      *
-     * @param  string  $$abstract
      * @return array
+     * @param $abstract
      */
     protected getExtenders ($abstract: string): Array<any> {
         $abstract = this.getAlias($abstract);
@@ -282,8 +282,8 @@ export default class Container implements ContainerContract {
     /**
      * Get the contextual concrete binding for the given $abstract.
      *
-     * @param  string  $abstract
      * @return string|null
+     * @param $abstract
      */
     protected getContextualConcrete ($abstract: string): any {
         let binding = this.findInContextualBindings($abstract);
@@ -308,8 +308,8 @@ export default class Container implements ContainerContract {
     /**
      * Find the concrete binding for the given $abstract in the contextual binding array.
      *
-     * @param  string  $abstract
      * @return string|null
+     * @param $abstract
      */
     protected findInContextualBindings ($abstract: string): any {
         let end = this._buildStack.end();
@@ -342,9 +342,9 @@ export default class Container implements ContainerContract {
     /**
      * Alias a type to a different name.
      *
-     * @param  string  $abstract
-     * @param  string  alias
      * @return void
+     * @param $abstract
+     * @param alias
      */
     public alias ($abstract: string, alias: string) {
         this._aliases.set(alias, $abstract);
@@ -357,10 +357,10 @@ export default class Container implements ContainerContract {
     /**
      * Get the alias for an $abstract if available.
      *
-     * @param  string  $$abstract
      * @return string
      *
      * @throws \LogicException
+     * @param $abstract
      */
     public getAlias ($abstract: string): string {
         let _aliases = this._aliases.get($abstract);
@@ -376,9 +376,9 @@ export default class Container implements ContainerContract {
     /**
      * Assign a set of tags to a given binding.
      *
-     * @param  array|string  $abstracts
-     * @param  array|any   ...tags
      * @return void
+     * @param $abstracts
+     * @param tags
      */
     public tag ($abstracts: any, ...tags: Array<any>) {
         tags.forEach((tag) => {
@@ -395,8 +395,8 @@ export default class Container implements ContainerContract {
     /**
      * Resolve all of the bindings for a given tag.
      *
-     * @param  string  tag
      * @return array
+     * @param tag
      */
     public tagged (tag: string): Array<any> {
         let results: any[] = [];
@@ -507,10 +507,10 @@ export default class Container implements ContainerContract {
     /**
      * Register a binding if it hasn't already been registered.
      *
-     * @param  string  $abstract
-     * @param  \Closure|string|null  concrete
-     * @param  boolean  shared
      * @return void
+     * @param $abstract
+     * @param concrete
+     * @param shared
      */
     public bindIf ($abstract: string, concrete: any = null, shared: boolean = false) {
         if (!this.bound($abstract)) {
@@ -521,9 +521,9 @@ export default class Container implements ContainerContract {
     /**
      * Register a shared binding in the container.
      *
-     * @param  string  $abstract
-     * @param  Closure|string|null  concrete
      * @return void
+     * @param $abstract
+     * @param concrete
      */
     public singleton ($abstract: string, concrete: any = null) {
         this.bind($abstract, concrete, true);
@@ -532,11 +532,11 @@ export default class Container implements ContainerContract {
     /**
      * "Extend" an $abstract type in the container.
      *
-     * @param  string    $abstract
-     * @param  Closure  closure
      * @return void
      *
      * @throws \InvalidArgumentException
+     * @param $abstract
+     * @param closure
      */
     public extend ($abstract: string, closure: Closure) {
         $abstract = this.getAlias($abstract);
@@ -557,9 +557,9 @@ export default class Container implements ContainerContract {
     /**
      * Register an existing instance as shared in the container.
      *
-     * @param  string  $abstract
-     * @param  any   instance
      * @return any
+     * @param $abstract
+     * @param instance
      */
     public instance ($abstract: string, instance: any): any {
         this.remove$abstractAlias($abstract);
@@ -577,8 +577,8 @@ export default class Container implements ContainerContract {
     /**
      * Remove an alias from the contextual binding alias cache.
      *
-     * @param  string  $searched
      * @return void
+     * @param searched
      */
     protected remove$abstractAlias (searched: string) {
         if (_.isEmpty(this._aliases.get(searched))) {
@@ -597,8 +597,8 @@ export default class Container implements ContainerContract {
     /**
      * Define a contextual binding.
      *
-     * @param  string  $concrete
      * @return ContextualBindingBuilder
+     * @param concrete
      */
     public when (concrete: string): ContextualBindingBuilder {
         return new ContextualBindingBuilder(this, this.getAlias(concrete));
@@ -607,8 +607,8 @@ export default class Container implements ContainerContract {
     /**
      * Get a closure to resolve the given type from the container.
      *
-     * @param  string  $$abstract
      * @return \Closure
+     * @param $abstract
      */
     public factory ($abstract: string): Closure {
         return function () {
@@ -619,9 +619,9 @@ export default class Container implements ContainerContract {
     /**
      * An alias function name for make().
      *
-     * @param  string  $$abstract
-     * @param  array  $parameters
      * @return any
+     * @param $abstract
+     * @param parameters
      */
     public makeWith ($abstract: String, parameters: any[] = []): any {
         return this.make($abstract, parameters);
@@ -630,9 +630,9 @@ export default class Container implements ContainerContract {
     /**
      * Resolve the given type from the container.
      *
-     * @param  string  $abstract
-     * @param  Array<any>  parameters
      * @return any
+     * @param $abstract
+     * @param parameters
      */
     public make ($abstract: String, parameters: Array<any> = []): any {
         return this.resolve($abstract, parameters);
@@ -641,10 +641,10 @@ export default class Container implements ContainerContract {
     /**
      * Call the given Closure / class@method and inject its dependencies.
      *
-     * @param  callable|string  callback
-     * @param  array  parameters
-     * @param  string|null  defaultMethod
      * @return mixed
+     * @param callback
+     * @param parameters
+     * @param defaultMethod
      */
     public all (callback: any, parameters: Array<any>, defaultMethod: string) {
 
@@ -653,8 +653,8 @@ export default class Container implements ContainerContract {
     /**
      * Determine if the given $abstract type has been resolved.
      *
-     * @param  string $abstract
      * @return boolean
+     * @param $abstract
      */
     public resolved ($abstract: any): boolean {
         if (this.isAlias($abstract)) {
@@ -667,9 +667,9 @@ export default class Container implements ContainerContract {
     /**
      * Register a new resolving callback.
      *
-     * @param  \Closure|string  $abstract
-     * @param  \Closure|null  callback
      * @return void
+     * @param $abstract
+     * @param callback
      */
     public resolving ($abstract: any, callback: any = null) {
         if (_.isString($abstract)) {
@@ -688,9 +688,9 @@ export default class Container implements ContainerContract {
     /**
      * Register a new after resolving callback.
      *
-     * @param  \Closure|string  $abstract
-     * @param  \Closure|null  callback
      * @return void
+     * @param $abstract
+     * @param callback
      */
     public afterResolving ($abstract: any, callback: any) {
         if (_.isString($abstract)) {

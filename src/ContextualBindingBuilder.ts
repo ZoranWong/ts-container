@@ -26,9 +26,9 @@ export default class ContextualBindingBuilder implements ContextualBindingBuilde
     /**
      * Create a new contextual binding builder.
      *
-     * @param  \Illuminate\Container\Container  $container
-     * @param  string  $concrete
      * @return void
+     * @param container
+     * @param concrete
      */
     constructor(container: Container, concrete: string) {
         this.concrete = concrete;
@@ -38,8 +38,8 @@ export default class ContextualBindingBuilder implements ContextualBindingBuilde
     /**
      * Define the abstract target that depends on the context.
      *
-     * @param  string  $abstract
      * @return $this
+     * @param abstract
      */
     public needs(abstract: any) {
         this.need = abstract;
@@ -50,8 +50,8 @@ export default class ContextualBindingBuilder implements ContextualBindingBuilde
     /**
      * Define the implementation for the contextual binding.
      *
-     * @param  \Closure|string  implementation
      * @return void
+     * @param implementation
      */
     public give(implementation: any) {
         this.container.addContextualBinding(

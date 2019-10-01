@@ -75,7 +75,6 @@ export function register (name: any = null, constructorParamTypes: Array<any> = 
             container.alias(_constructorStr, _name);
         }
     }
-
     if(!_.isString(name) && isClass(name)) {
         register(name);
     }else{
@@ -109,6 +108,7 @@ export function singleton (name: any = null, constructorParamTypes: Array<any> =
             container.alias(_constructorStr, _name);
         }
     }
+
     if(!_.isString(name) && isClass(name)) {
         singleton(name);
     }else{

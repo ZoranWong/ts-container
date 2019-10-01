@@ -3,7 +3,7 @@ import { Closure } from './Utils/Types';
 import ContextualBindingBuilder from './ContextualBindingBuilder';
 import Binding from './Contracts/Binding';
 import Stack from "./Contracts/Stack";
-import TMap from "./TMap";
+import StrKeyMap from "./StrKeyMap";
 export default class Container implements ContainerContract {
     /**
      * The current globally available container (if any).
@@ -16,49 +16,49 @@ export default class Container implements ContainerContract {
      *
      * @var Map<string, any> _resolved
      */
-    protected _resolved: TMap<any>;
+    protected _resolved: StrKeyMap<any>;
     /**
      * The container's bindings.
      *
      * @var array
      */
-    protected _bindings: TMap<Binding>;
+    protected _bindings: StrKeyMap<Binding>;
     /**
      * The container's method bindings.
      *
      * @var array
      */
-    protected _methodBindings: TMap<Closure>;
+    protected _methodBindings: StrKeyMap<Closure>;
     /**
      * The container's shared instances.
      *
      * @var array
      */
-    protected _instances: TMap<any>;
+    protected _instances: StrKeyMap<any>;
     /**
      * The registered type aliases.
      *
      * @var array
      */
-    protected _aliases: TMap<any>;
+    protected _aliases: StrKeyMap<any>;
     /**
      * The registered aliases keyed by the $abstract name.
      *
      * @var array
      */
-    protected _$abstractAliases: TMap<Array<string>>;
+    protected _$abstractAliases: StrKeyMap<Array<string>>;
     /**
      * The extension closures for services.
      *
      * @var array
      */
-    protected _extenders: TMap<Array<any>>;
+    protected _extenders: StrKeyMap<Array<any>>;
     /**
      * All of the registered tags.
      *
      * @var array
      */
-    protected _tags: TMap<Array<any>>;
+    protected _tags: StrKeyMap<Array<any>>;
     /**
      * The stack of concretions currently being built.
      *
@@ -82,7 +82,7 @@ export default class Container implements ContainerContract {
      *
      * @var array
      */
-    protected _reboundCallbacks: TMap<Array<Closure>>;
+    protected _reboundCallbacks: StrKeyMap<Array<Closure>>;
     /**
      * All of the global resolving callbacks.
      *
@@ -114,24 +114,24 @@ export default class Container implements ContainerContract {
     /**
      * Determine if the container has a method binding.
      *
-     * @param  string  $method
      * @return boolean
+     * @param method
      */
     hasMethodBinding(method: string): boolean;
     /**
      * Get the method binding for the given method.
      *
-     * @param  string  method
-     * @param  any  instance
      * @return any
+     * @param method
+     * @param instance
      */
     callMethodBinding(method: string, instance: any): any;
     /**
      * Fire all of the resolving callbacks.
      *
-     * @param  string  $abstract
-     * @param  any   object
      * @return void
+     * @param $abstract
+     * @param object
      */
     protected fireResolvingCallbacks($abstract: string, object: any): void;
     protected fireAfterResolvingCallbacks($abstract: string, object: any): any;
@@ -141,8 +141,8 @@ export default class Container implements ContainerContract {
     /**
      * Get the extender callbacks for a given type.
      *
-     * @param  string  $$abstract
      * @return array
+     * @param $abstract
      */
     protected getExtenders($abstract: string): Array<any>;
     /**
@@ -155,15 +155,15 @@ export default class Container implements ContainerContract {
     /**
      * Get the contextual concrete binding for the given $abstract.
      *
-     * @param  string  $abstract
      * @return string|null
+     * @param $abstract
      */
     protected getContextualConcrete($abstract: string): any;
     /**
      * Find the concrete binding for the given $abstract in the contextual binding array.
      *
-     * @param  string  $abstract
      * @return string|null
+     * @param $abstract
      */
     protected findInContextualBindings($abstract: string): any;
     has(id: any): boolean;
@@ -178,33 +178,33 @@ export default class Container implements ContainerContract {
     /**
      * Alias a type to a different name.
      *
-     * @param  string  $abstract
-     * @param  string  alias
      * @return void
+     * @param $abstract
+     * @param alias
      */
     alias($abstract: string, alias: string): void;
     /**
      * Get the alias for an $abstract if available.
      *
-     * @param  string  $$abstract
      * @return string
      *
      * @throws \LogicException
+     * @param $abstract
      */
     getAlias($abstract: string): string;
     /**
      * Assign a set of tags to a given binding.
      *
-     * @param  array|string  $abstracts
-     * @param  array|any   ...tags
      * @return void
+     * @param $abstracts
+     * @param tags
      */
     tag($abstracts: any, ...tags: Array<any>): void;
     /**
      * Resolve all of the bindings for a given tag.
      *
-     * @param  string  tag
      * @return array
+     * @param tag
      */
     tagged(tag: string): Array<any>;
     /**
@@ -249,105 +249,105 @@ export default class Container implements ContainerContract {
     /**
      * Register a binding if it hasn't already been registered.
      *
-     * @param  string  $abstract
-     * @param  \Closure|string|null  concrete
-     * @param  boolean  shared
      * @return void
+     * @param $abstract
+     * @param concrete
+     * @param shared
      */
     bindIf($abstract: string, concrete?: any, shared?: boolean): void;
     /**
      * Register a shared binding in the container.
      *
-     * @param  string  $abstract
-     * @param  Closure|string|null  concrete
      * @return void
+     * @param $abstract
+     * @param concrete
      */
     singleton($abstract: string, concrete?: any): void;
     /**
      * "Extend" an $abstract type in the container.
      *
-     * @param  string    $abstract
-     * @param  Closure  closure
      * @return void
      *
      * @throws \InvalidArgumentException
+     * @param $abstract
+     * @param closure
      */
     extend($abstract: string, closure: Closure): void;
     /**
      * Register an existing instance as shared in the container.
      *
-     * @param  string  $abstract
-     * @param  any   instance
      * @return any
+     * @param $abstract
+     * @param instance
      */
     instance($abstract: string, instance: any): any;
     /**
      * Remove an alias from the contextual binding alias cache.
      *
-     * @param  string  $searched
      * @return void
+     * @param searched
      */
     protected remove$abstractAlias(searched: string): void;
     /**
      * Define a contextual binding.
      *
-     * @param  string  $concrete
      * @return ContextualBindingBuilder
+     * @param concrete
      */
     when(concrete: string): ContextualBindingBuilder;
     /**
      * Get a closure to resolve the given type from the container.
      *
-     * @param  string  $$abstract
      * @return \Closure
+     * @param $abstract
      */
     factory($abstract: string): Closure;
     /**
      * An alias function name for make().
      *
-     * @param  string  $$abstract
-     * @param  array  $parameters
      * @return any
+     * @param $abstract
+     * @param parameters
      */
     makeWith($abstract: String, parameters?: any[]): any;
     /**
      * Resolve the given type from the container.
      *
-     * @param  string  $abstract
-     * @param  Array<any>  parameters
      * @return any
+     * @param $abstract
+     * @param parameters
      */
     make($abstract: String, parameters?: Array<any>): any;
     /**
      * Call the given Closure / class@method and inject its dependencies.
      *
-     * @param  callable|string  callback
-     * @param  array  parameters
-     * @param  string|null  defaultMethod
      * @return mixed
+     * @param callback
+     * @param parameters
+     * @param defaultMethod
      */
     all(callback: any, parameters: Array<any>, defaultMethod: string): void;
     /**
      * Determine if the given $abstract type has been resolved.
      *
-     * @param  string $abstract
      * @return boolean
+     * @param $abstract
      */
     resolved($abstract: any): boolean;
     /**
      * Register a new resolving callback.
      *
-     * @param  \Closure|string  $abstract
-     * @param  \Closure|null  callback
      * @return void
+     * @param $abstract
+     * @param callback
      */
     resolving($abstract: any, callback?: any): void;
     /**
      * Register a new after resolving callback.
      *
-     * @param  \Closure|string  $abstract
-     * @param  \Closure|null  callback
      * @return void
+     * @param $abstract
+     * @param callback
      */
     afterResolving($abstract: any, callback: any): void;
 }

@@ -1,7 +1,8 @@
 "use strict";
 import Container from './Container';
-import { Closure } from './Utils/Types';
+import {Closure, isClosure} from './Utils/Types';
 import * as _ from 'lodash';
+import InvalidArgumentException from "./Expceptions/InvalidArgumentException";
 const Global = this;
 // BoundMethod主要是为方法绑定相应实例
 export default class BoundMethod {
@@ -12,9 +13,9 @@ export default class BoundMethod {
      * @param  callable|string  $callback
      * @param  array  $parameters
      * @param  string|null  $defaultMethod
-     * @return mixed
+     * @return any
      */
-    public static call(container: Container, callback: Closure, parameters: Array<any> = [], defaultMethod: any = null) {
+    public static call(container: Container, callback: any, parameters: Array<any> = [], defaultMethod: any = null):any {
         if (BoundMethod.isCallableWithAtSign(callback) || defaultMethod) {
             return BoundMethod.callClass(container, callback, parameters, defaultMethod);
         }
@@ -28,15 +29,21 @@ export default class BoundMethod {
      * Call a string reference to a class using Class@method syntax.
      *
      * @param  Container  container
-     * @param  string  target
+     * @param  any  target
      * @param  array parameters
      * @param  string|null  defaultMethod
-     * @return mixed
+     * @return any
      *
      * @throws \InvalidArgumentException
      */
-    protected static callClass(container: Container, target: any, parameters: Array<any> = [], defaultMethod: any = null) {
+    protected static callClass(container: Container, target: any, parameters: Array<any> = [], defaultMethod: any = null): any {
+        let segments: Array<string> = target.split('@');
+        let method: string = segments.length === 2 ? segments[1] : defaultMethod;
+        if(_.isNull(method)) {
+            throw new InvalidArgumentException('Method not provided.');
+        }
 
+        return BoundMethod.call(container, [container.make(segments[0]), method], parameters);
     }
 
     /**
@@ -49,7 +56,7 @@ export default class BoundMethod {
      */
     protected static callBoundMethod(container: Container, callback: Closure, defaultCallback: any) {
         if (!_.isArray(callback)) {
-            return _.isFunction(defaultCallback) ? defaultCallback() : defaultCallback;
+            return isClosure(defaultCallback) ? defaultCallback() : defaultCallback;
         }
 
         // Here we need to turn the array callable into a Class@method string we can use to
@@ -61,7 +68,7 @@ export default class BoundMethod {
             return container.callMethodBinding(method, (callback as any)[0]);
         }
 
-        return _.isFunction(defaultCallback) ? defaultCallback() : defaultCallback;
+        return isClosure(defaultCallback) ? defaultCallback() : defaultCallback;
     }
 
     /**
@@ -71,7 +78,7 @@ export default class BoundMethod {
      * @return string
      */
     protected static normalizeMethod(callback: any) {
-        return _.isString(callback[0]) ? "{$callback[0]}@{$callback[1]}" : callback[0][callback[1]];
+        return _.isString(callback[0]) ? `${callback[0]}@${callback[1]}` : callback[0][callback[1]];
     }
 
     /**

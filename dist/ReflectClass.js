@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Types_1 = require("./Utils/Types");
-const ReflectionFunction_1 = require("./ReflectionFunction");
-class ReflectionClass extends ReflectionFunction_1.default {
+const ReflectFunction_1 = require("./ReflectFunction");
+class ReflectClass extends ReflectFunction_1.default {
     constructor($class) {
         super($class);
         this._className = null;
@@ -11,5 +11,11 @@ class ReflectionClass extends ReflectionFunction_1.default {
     paramParse() {
         return Types_1.ctorParamMetadata(this._callback);
     }
+    getConstructor() {
+        return this._callback;
+    }
+    isInstantiable() {
+        return Types_1.isClass(this._callback);
+    }
 }
-exports.default = ReflectionClass;
+exports.default = ReflectClass;

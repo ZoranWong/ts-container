@@ -1,12 +1,15 @@
 "use strict";
 import ContainerContract from './Contracts/Container';
-import {Closure, isTypeOf} from './Utils/Types';
+import {Closure, isClosure} from './Utils/Types';
 import ContextualBindingBuilder from './ContextualBindingBuilder';
 import * as _ from 'lodash';
 import Binding from './Contracts/Binding';
 import Stack from "./Contracts/Stack";
 import {end} from "./Utils/array";
 import StrKeyMap from "./StrKeyMap";
+import ReflectClass from "./ReflectClass";
+import BindingResolutionException from "./Expceptions/BindingResolutionException";
+import Ctor from "./Contracts/Ctor";
 
 export default class Container implements ContainerContract {
     /**
@@ -105,28 +108,28 @@ export default class Container implements ContainerContract {
      *
      * @var array
      */
-    protected _globalResolvingCallbacks: Array<any> = [];
+    protected _globalResolvingCallbacks: StrKeyMap<any> = new StrKeyMap<any>();
 
     /**
      * All of the global after resolving callbacks.
      *
      * @var array
      */
-    protected _globalAfterResolvingCallbacks: Array<any> = [];
+    protected _globalAfterResolvingCallbacks: StrKeyMap<any> = new StrKeyMap<any>();
 
     /**
      * All of the resolving callbacks by class type.
      *
      * @var array
      */
-    protected _resolvingCallbacks: Array<any> = [];
+    protected _resolvingCallbacks: StrKeyMap<any> = new StrKeyMap<any>();
 
     /**
      * All of the after resolving callbacks by class type.
      *
      * @var array
      */
-    protected _afterResolvingCallbacks: Array<any> = [];
+    protected _afterResolvingCallbacks: StrKeyMap<any> = new StrKeyMap<any>();
 
     constructor () {
 
@@ -139,12 +142,13 @@ export default class Container implements ContainerContract {
         return null;
     }
 
-    protected resolve ($abstract: any, parameters: Array<any> = []): any {
+    protected resolve ($abstract: any, parameters: Array<any> = [], raiseEvents: boolean = true): any {
         $abstract = this.getAlias($abstract);
 
         let needsContextualBuild = (parameters.length > 0 || !_.isEmpty(
             this.getContextualConcrete($abstract)
         ));
+        // console.log(needsContextualBuild, '===================== needsContextualBuild ===============', this.getContextualConcrete($abstract));
         if (!_.isEmpty(this._instances.get($abstract)) && !needsContextualBuild) {
             return this._instances.get($abstract);
         }
@@ -152,8 +156,13 @@ export default class Container implements ContainerContract {
         this._with.push(parameters);
 
         let concrete = this.getConcrete($abstract);
+        let object: any = null;
+        if (this.isBuildable(concrete, $abstract)) {
+            object = this.build(concrete);
+        } else {
+            object = this.make(concrete);
+        }
 
-        let object: any = concrete();
         let extenders = this.getExtenders($abstract) ? this.getExtenders($abstract) : [];
         extenders.forEach(($extender: Closure) => {
             object = $extender(object, this);
@@ -163,14 +172,28 @@ export default class Container implements ContainerContract {
             this._instances.set($abstract, object);
         }
 
-        this.fireResolvingCallbacks($abstract, object);
+        if (raiseEvents) {
+            this.fireResolvingCallbacks($abstract, object);
+        }
 
         this._resolved.set($abstract, true);
         this._with.pop();
         return object;
     }
 
+    protected isBuildable ($concrete: any, $abstract: any) {
+        return $concrete === $abstract || isClosure($concrete);
+    }
+
+    /**
+     * add contextual binding
+     * @return void
+     * @param $concrete
+     * @param $abstract
+     * @param $implementation
+     * */
     public addContextualBinding ($concrete: any, $abstract: any, $implementation: any): void {
+        this._contextual[$concrete] = this._contextual[$concrete] ? this._contextual[$concrete] : [];
         this._contextual[$concrete][this.getAlias($abstract)] = $implementation;
     }
 
@@ -204,7 +227,6 @@ export default class Container implements ContainerContract {
      */
     protected fireResolvingCallbacks ($abstract: string, object: any) {
         this.fireCallbackArray(object, this._globalResolvingCallbacks);
-
         this.fireCallbackArray(
             object, this.getCallbacksForType($abstract, object, this._resolvingCallbacks)
         );
@@ -220,17 +242,17 @@ export default class Container implements ContainerContract {
         );
     }
 
-    protected getCallbacksForType ($abstract: string, object: any, callbacksForType: Array<any>): Array<any> {
+    protected getCallbacksForType ($abstract: string, object: any, callbacksForType: StrKeyMap<any>): Array<any> {
         let results: any = [];
         callbacksForType.forEach((callbacks: any, type: any) => {
-            if (type === $abstract || isTypeOf(object, type)) {
+            if (type === $abstract) {
                 results = results.concat(callbacks);
             }
         });
         return results;
     }
 
-    protected fireCallbackArray (object: any, callbacks: Array<any>) {
+    protected fireCallbackArray (object: any, callbacks: Array<any> | StrKeyMap<any>) {
         callbacks.forEach((callback: any) => {
             callback instanceof Function && (callback = [callback]);
             callback.forEach((fn: Closure) => {
@@ -470,24 +492,65 @@ export default class Container implements ContainerContract {
      * @param  {Closure}  $concrete
      * @return {Closure}
      */
-    protected getClosure (concrete: Closure): Closure {
+    protected getClosure (concrete: any): Closure {
         return () => {
             let parameters: Array<any> = end(this._with);
-
-            try {
-                if(!_.isArray(parameters)) {
-                    parameters = [parameters];
-                }
-                return concrete(this, ...parameters);
-            }catch (e) {
-                return null;
-            }
-
+            return this.createInstance(concrete, parameters);
         };
     }
 
-    public build (concrete: Closure): any {
-        return concrete();
+    /**
+     * 创建实例
+     * @param {Ctor<T>} _constructor
+     * @param {Array<any>} args
+     * @return Function
+     * */
+    protected  createInstance (_constructor: any, args: Array<any>) {
+        let reflectClass = new ReflectClass(_constructor);
+        let params = reflectClass.getParameters();
+        let paramInstances: Array<any> = [];
+        params.forEach((v, k) => {
+            if(typeof args[k] !== 'undefined') {
+                paramInstances.push(args[k]);
+            }else{
+                paramInstances.push(v);
+            }
+        });
+        return new _constructor(...paramInstances);
+    }
+
+    public build (concrete: any): any {
+        if (isClosure(concrete)) {
+            return concrete.apply(this, this.getLastParameterOverride())
+        }
+
+        let reflector = new ReflectClass(concrete);
+        if (!reflector.isInstantiable()) {
+            return this.notInstantiable(concrete);
+        }
+        this._buildStack.push(concrete);
+        let constructor: Ctor<any> = reflector.getConstructor();
+        if (_.isNull(constructor)) {
+            this._buildStack.pop();
+            return new concrete();
+        }
+        this._buildStack.pop();
+        return this.createInstance(constructor, end(this._with));
+    }
+
+    /**
+     * @param concrete
+     * @throws
+     * */
+    protected notInstantiable (concrete: any): void {
+        let message = '';
+        if (!_.isEmpty(this._buildStack)) {
+            let previous: String = this._buildStack.join(',');
+            message = `Target [${concrete}] is not instantiable while building [${previous}].`;
+        } else {
+            message = `Target [${concrete}] is not instantiable.`;
+        }
+        throw new BindingResolutionException(message);
     }
 
     /**
@@ -562,7 +625,7 @@ export default class Container implements ContainerContract {
      * @param instance
      */
     public instance ($abstract: string, instance: any): any {
-        this.remove$abstractAlias($abstract);
+        this.removeAbstractAlias($abstract);
         let isBound = this.bound($abstract);
         this._aliases.delete($abstract);
 
@@ -580,7 +643,7 @@ export default class Container implements ContainerContract {
      * @return void
      * @param searched
      */
-    protected remove$abstractAlias (searched: string) {
+    protected removeAbstractAlias (searched: string) {
         if (_.isEmpty(this._aliases.get(searched))) {
             return;
         }
@@ -675,12 +738,11 @@ export default class Container implements ContainerContract {
         if (_.isString($abstract)) {
             $abstract = this.getAlias($abstract);
         }
-
         if (_.isNull(callback) && _.isFunction($abstract)) {
-            this._globalResolvingCallbacks.push($abstract);
+            this._globalResolvingCallbacks.set($abstract.toString(), $abstract);
         } else {
-            let callbacks: Array<Closure> = this._resolvingCallbacks[$abstract] ?
-                this._resolvingCallbacks[$abstract] : (this._resolvingCallbacks[$abstract] = []);
+            let callbacks: Array<Closure> = this._resolvingCallbacks.get($abstract) ?
+                this._resolvingCallbacks.get($abstract) : (this._resolvingCallbacks.set($abstract, []).get($abstract));
             callbacks.push(callback);
         }
     }
@@ -697,9 +759,12 @@ export default class Container implements ContainerContract {
             $abstract = this.getAlias($abstract);
         }
         if (_.isFunction($abstract) && _.isNull(callback)) {
-            this._globalAfterResolvingCallbacks.push($abstract);
+            this._globalAfterResolvingCallbacks.set($abstract.toString(), $abstract);
         } else {
-            this._afterResolvingCallbacks[$abstract].push(callback);
+            let callbacks = this._afterResolvingCallbacks.get($abstract);
+            callbacks = callbacks ? callbacks : [];
+            callbacks.push(callback);
+            this._afterResolvingCallbacks.set($abstract, callbacks);
         }
     }
 }

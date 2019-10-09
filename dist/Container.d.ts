@@ -88,28 +88,36 @@ export default class Container implements ContainerContract {
      *
      * @var array
      */
-    protected _globalResolvingCallbacks: Array<any>;
+    protected _globalResolvingCallbacks: StrKeyMap<any>;
     /**
      * All of the global after resolving callbacks.
      *
      * @var array
      */
-    protected _globalAfterResolvingCallbacks: Array<any>;
+    protected _globalAfterResolvingCallbacks: StrKeyMap<any>;
     /**
      * All of the resolving callbacks by class type.
      *
      * @var array
      */
-    protected _resolvingCallbacks: Array<any>;
+    protected _resolvingCallbacks: StrKeyMap<any>;
     /**
      * All of the after resolving callbacks by class type.
      *
      * @var array
      */
-    protected _afterResolvingCallbacks: Array<any>;
+    protected _afterResolvingCallbacks: StrKeyMap<any>;
     constructor();
     get(id: any): any;
-    protected resolve($abstract: any, parameters?: Array<any>): any;
+    protected resolve($abstract: any, parameters?: Array<any>, raiseEvents?: boolean): any;
+    protected isBuildable($concrete: any, $abstract: any): boolean;
+    /**
+     * add contextual binding
+     * @return void
+     * @param $concrete
+     * @param $abstract
+     * @param $implementation
+     * */
     addContextualBinding($concrete: any, $abstract: any, $implementation: any): void;
     /**
      * Determine if the container has a method binding.
@@ -135,8 +143,8 @@ export default class Container implements ContainerContract {
      */
     protected fireResolvingCallbacks($abstract: string, object: any): void;
     protected fireAfterResolvingCallbacks($abstract: string, object: any): any;
-    protected getCallbacksForType($abstract: string, object: any, callbacksForType: Array<any>): Array<any>;
-    protected fireCallbackArray(object: any, callbacks: Array<any>): void;
+    protected getCallbacksForType($abstract: string, object: any, callbacksForType: StrKeyMap<any>): Array<any>;
+    protected fireCallbackArray(object: any, callbacks: Array<any> | StrKeyMap<any>): void;
     protected isShared($abstract: string): boolean;
     /**
      * Get the extender callbacks for a given type.
@@ -237,8 +245,20 @@ export default class Container implements ContainerContract {
      * @param  {Closure}  $concrete
      * @return {Closure}
      */
-    protected getClosure(concrete: Closure): Closure;
-    build(concrete: Closure): any;
+    protected getClosure(concrete: any): Closure;
+    /**
+     * 创建实例
+     * @param {Ctor<T>} _constructor
+     * @param {Array<any>} args
+     * @return Function
+     * */
+    protected createInstance(_constructor: any, args: Array<any>): any;
+    build(concrete: any): any;
+    /**
+     * @param concrete
+     * @throws
+     * */
+    protected notInstantiable(concrete: any): void;
     /**
      * Get the last parameter override.
      *
@@ -287,7 +307,7 @@ export default class Container implements ContainerContract {
      * @return void
      * @param searched
      */
-    protected remove$abstractAlias(searched: string): void;
+    protected removeAbstractAlias(searched: string): void;
     /**
      * Define a contextual binding.
      *

@@ -1,11 +1,11 @@
 "use strict";
 import {Closure} from './Utils/Types';
-import ReflectionParameter from './ReflectionParameter';
+import ReflectParameter from './ReflectParameter';
 import IOCError from "./Expceptions/IOCError";
-export default class ReflectionFunction {
+export default class ReflectFunction {
     protected _callback: Closure = null;
 
-    protected _parameters: Array<ReflectionParameter<any>> = [];
+    protected _parameters: Array<ReflectParameter<any>> = [];
 
     constructor(callback: Closure) {
         this._callback = callback;
@@ -16,13 +16,13 @@ export default class ReflectionFunction {
             if(paramType === this._callback) {
                 throw  new IOCError('不可以依赖自身');
             }
-            let parameter = new ReflectionParameter<typeof paramType>(paramType, value['value'], value['name']);
+            let parameter = new ReflectParameter<typeof paramType>(paramType, value['value'], value['name']);
             this._parameters.push(parameter);
         });
     }
 
     public getParameters() {
-        return this._parameters.map((param: ReflectionParameter<any>) => {
+        return this._parameters.map((param: ReflectParameter<any>) => {
             return param.getValue();
         });
     }

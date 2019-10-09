@@ -1,7 +1,8 @@
 "use strict";
-import {ctorParamMetadata} from './Utils/Types';
-import ReflectionFunction from "./ReflectionFunction";
-export default class ReflectionClass extends ReflectionFunction{
+import {ctorParamMetadata, isClass} from './Utils/Types';
+import ReflectFunction from "./ReflectFunction";
+import Ctor from "./Contracts/Ctor";
+export default class ReflectClass extends ReflectFunction{
     protected _className: string = null;
 
     constructor($class: any) {
@@ -11,5 +12,13 @@ export default class ReflectionClass extends ReflectionFunction{
 
     protected  paramParse (): any[] {
         return ctorParamMetadata(this._callback);
+    }
+
+    public getConstructor(): Ctor<any> {
+        return this._callback as Ctor<any>;
+    }
+
+    public isInstantiable() : boolean {
+        return isClass(this._callback);
     }
 }

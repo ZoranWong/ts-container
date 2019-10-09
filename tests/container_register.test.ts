@@ -1,6 +1,7 @@
-import {register, singleton, factory, makeWith} from "../src";
+import {register, singleton, factory, makeWith, ioc} from "../src";
 import {isClosure, isReallyInstanceOf, isTypeOf} from "../src/Utils/Types";
 import {container} from "../src/IOC";
+import ContainerInterface from "../src/Contracts/ContainerInterface";
 type F = (k:string,fn: Function )=> void ;
 type E = (p: boolean) => any ;
 declare var test: F ;
@@ -80,5 +81,25 @@ class T3 {
 }
 
 test('factory: factory(T3).a === "test": true', () => {
+    console.log(factory(T3));
     expect((factory(T3) as T3).a === "test").toBe(true);
 });
+
+
+
+@register('testResolving')
+class TestResolve {
+
+}
+
+container.resolving('testResolving', function (t3: T3, container: ContainerInterface) {
+    console.log(container.has('t1'), '------------------------------');
+});
+container.afterResolving('testResolving', function () {
+   console.log('------------- after --------------');
+});
+
+
+
+container.when('testResolving').needs(T3).give(new T3());
+console.log(factory('testResolving'));

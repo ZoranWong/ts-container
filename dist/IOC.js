@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Container_1 = require("./Container");
 require("reflect-metadata");
-const ReflectClass_1 = require("./ReflectClass");
 const md5 = require("md5");
 const _ = require("lodash");
 const Types_1 = require("./Utils/Types");
@@ -27,26 +26,6 @@ function beforeInject(target, name = null) {
     return { _name: name, _constructorStr: md5(_constructorStr), _constructor: _constructor };
 }
 /**
- * 创建实例
- * @param {Ctor<T>} _constructor
- * @param {Array<any>} args
- * @return Function
- * */
-function createInstance(_constructor, args) {
-    let reflectClass = new ReflectClass_1.default(_constructor);
-    let params = reflectClass.getParameters();
-    let paramInstances = [];
-    params.forEach((v, k) => {
-        if (typeof args[k] !== 'undefined') {
-            paramInstances.push(args[k]);
-        }
-        else {
-            paramInstances.push(v);
-        }
-    });
-    return new _constructor(...paramInstances);
-}
-/**
  * 将class（target）注册到容器中
  * @param {String} name 别名默认没有
  * @param {Array<any>} constructorParamTypes 注册类型的构造函数参数类型（js版本使用），默认为null
@@ -62,10 +41,9 @@ function register(name = null, constructorParamTypes = null) {
             Reflect.defineMetadata('design:paramtypes', constructorParamTypes, target);
         }
         let { _name, _constructorStr, _constructor } = beforeInject(target, name);
-        if (!exports.container.bound(_constructorStr))
-            exports.container.bind(_constructorStr, (container, ...args) => {
-                return createInstance(_constructor, args);
-            });
+        if (!exports.container.bound(_constructorStr)) {
+            exports.container.bind(_constructorStr, _constructor);
+        }
         if (_name) {
             exports.container.alias(_constructorStr, _name);
         }
@@ -95,9 +73,7 @@ function singleton(name = null, constructorParamTypes = null) {
         }
         let { _name, _constructorStr, _constructor } = beforeInject(target, name);
         if (!exports.container.bound(_constructorStr)) {
-            exports.container.singleton(_constructorStr, (container, ...args) => {
-                return createInstance(_constructor, args);
-            });
+            exports.container.singleton(_constructorStr, _constructor);
         }
         if (_name) {
             exports.container.alias(_constructorStr, _name);

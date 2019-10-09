@@ -43,7 +43,6 @@ export default class ContextualBindingBuilder implements ContextualBindingBuilde
      */
     public needs(abstract: any) {
         this.need = abstract;
-
         return this;
     }
 

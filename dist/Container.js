@@ -6,6 +6,8 @@ const _ = require("lodash");
 const Stack_1 = require("./Contracts/Stack");
 const array_1 = require("./Utils/array");
 const StrKeyMap_1 = require("./StrKeyMap");
+const ReflectClass_1 = require("./ReflectClass");
+const BindingResolutionException_1 = require("./Expceptions/BindingResolutionException");
 class Container {
     constructor() {
         /**
@@ -85,25 +87,25 @@ class Container {
          *
          * @var array
          */
-        this._globalResolvingCallbacks = [];
+        this._globalResolvingCallbacks = new StrKeyMap_1.default();
         /**
          * All of the global after resolving callbacks.
          *
          * @var array
          */
-        this._globalAfterResolvingCallbacks = [];
+        this._globalAfterResolvingCallbacks = new StrKeyMap_1.default();
         /**
          * All of the resolving callbacks by class type.
          *
          * @var array
          */
-        this._resolvingCallbacks = [];
+        this._resolvingCallbacks = new StrKeyMap_1.default();
         /**
          * All of the after resolving callbacks by class type.
          *
          * @var array
          */
-        this._afterResolvingCallbacks = [];
+        this._afterResolvingCallbacks = new StrKeyMap_1.default();
     }
     get(id) {
         if (this.has(id)) {
@@ -111,15 +113,22 @@ class Container {
         }
         return null;
     }
-    resolve($abstract, parameters = []) {
+    resolve($abstract, parameters = [], raiseEvents = true) {
         $abstract = this.getAlias($abstract);
         let needsContextualBuild = (parameters.length > 0 || !_.isEmpty(this.getContextualConcrete($abstract)));
+        // console.log(needsContextualBuild, '===================== needsContextualBuild ===============', this.getContextualConcrete($abstract));
         if (!_.isEmpty(this._instances.get($abstract)) && !needsContextualBuild) {
             return this._instances.get($abstract);
         }
         this._with.push(parameters);
         let concrete = this.getConcrete($abstract);
-        let object = concrete();
+        let object = null;
+        if (this.isBuildable(concrete, $abstract)) {
+            object = this.build(concrete);
+        }
+        else {
+            object = this.make(concrete);
+        }
         let extenders = this.getExtenders($abstract) ? this.getExtenders($abstract) : [];
         extenders.forEach(($extender) => {
             object = $extender(object, this);
@@ -127,12 +136,25 @@ class Container {
         if (this.isShared($abstract) && !needsContextualBuild) {
             this._instances.set($abstract, object);
         }
-        this.fireResolvingCallbacks($abstract, object);
+        if (raiseEvents) {
+            this.fireResolvingCallbacks($abstract, object);
+        }
         this._resolved.set($abstract, true);
         this._with.pop();
         return object;
     }
+    isBuildable($concrete, $abstract) {
+        return $concrete === $abstract || Types_1.isClosure($concrete);
+    }
+    /**
+     * add contextual binding
+     * @return void
+     * @param $concrete
+     * @param $abstract
+     * @param $implementation
+     * */
     addContextualBinding($concrete, $abstract, $implementation) {
+        this._contextual[$concrete] = this._contextual[$concrete] ? this._contextual[$concrete] : [];
         this._contextual[$concrete][this.getAlias($abstract)] = $implementation;
     }
     /**
@@ -173,7 +195,7 @@ class Container {
     getCallbacksForType($abstract, object, callbacksForType) {
         let results = [];
         callbacksForType.forEach((callbacks, type) => {
-            if (type === $abstract || Types_1.isTypeOf(object, type)) {
+            if (type === $abstract) {
                 results = results.concat(callbacks);
             }
         });
@@ -403,19 +425,60 @@ class Container {
     getClosure(concrete) {
         return () => {
             let parameters = array_1.end(this._with);
-            try {
-                if (!_.isArray(parameters)) {
-                    parameters = [parameters];
-                }
-                return concrete(this, ...parameters);
-            }
-            catch (e) {
-                return null;
-            }
+            return this.createInstance(concrete, parameters);
         };
     }
+    /**
+     * 创建实例
+     * @param {Ctor<T>} _constructor
+     * @param {Array<any>} args
+     * @return Function
+     * */
+    createInstance(_constructor, args) {
+        let reflectClass = new ReflectClass_1.default(_constructor);
+        let params = reflectClass.getParameters();
+        let paramInstances = [];
+        params.forEach((v, k) => {
+            if (typeof args[k] !== 'undefined') {
+                paramInstances.push(args[k]);
+            }
+            else {
+                paramInstances.push(v);
+            }
+        });
+        return new _constructor(...paramInstances);
+    }
     build(concrete) {
-        return concrete();
+        if (Types_1.isClosure(concrete)) {
+            return concrete.apply(this, this.getLastParameterOverride());
+        }
+        let reflector = new ReflectClass_1.default(concrete);
+        if (!reflector.isInstantiable()) {
+            return this.notInstantiable(concrete);
+        }
+        this._buildStack.push(concrete);
+        let constructor = reflector.getConstructor();
+        if (_.isNull(constructor)) {
+            this._buildStack.pop();
+            return new concrete();
+        }
+        this._buildStack.pop();
+        return this.createInstance(constructor, array_1.end(this._with));
+    }
+    /**
+     * @param concrete
+     * @throws
+     * */
+    notInstantiable(concrete) {
+        let message = '';
+        if (!_.isEmpty(this._buildStack)) {
+            let previous = this._buildStack.join(',');
+            message = `Target [${concrete}] is not instantiable while building [${previous}].`;
+        }
+        else {
+            message = `Target [${concrete}] is not instantiable.`;
+        }
+        throw new BindingResolutionException_1.default(message);
     }
     /**
      * Get the last parameter override.
@@ -485,7 +548,7 @@ class Container {
      * @param instance
      */
     instance($abstract, instance) {
-        this.remove$abstractAlias($abstract);
+        this.removeAbstractAlias($abstract);
         let isBound = this.bound($abstract);
         this._aliases.delete($abstract);
         this._instances.set($abstract, instance);
@@ -500,7 +563,7 @@ class Container {
      * @return void
      * @param searched
      */
-    remove$abstractAlias(searched) {
+    removeAbstractAlias(searched) {
         if (_.isEmpty(this._aliases.get(searched))) {
             return;
         }
@@ -588,11 +651,11 @@ class Container {
             $abstract = this.getAlias($abstract);
         }
         if (_.isNull(callback) && _.isFunction($abstract)) {
-            this._globalResolvingCallbacks.push($abstract);
+            this._globalResolvingCallbacks.set($abstract.toString(), $abstract);
         }
         else {
-            let callbacks = this._resolvingCallbacks[$abstract] ?
-                this._resolvingCallbacks[$abstract] : (this._resolvingCallbacks[$abstract] = []);
+            let callbacks = this._resolvingCallbacks.get($abstract) ?
+                this._resolvingCallbacks.get($abstract) : (this._resolvingCallbacks.set($abstract, []).get($abstract));
             callbacks.push(callback);
         }
     }
@@ -608,10 +671,13 @@ class Container {
             $abstract = this.getAlias($abstract);
         }
         if (_.isFunction($abstract) && _.isNull(callback)) {
-            this._globalAfterResolvingCallbacks.push($abstract);
+            this._globalAfterResolvingCallbacks.set($abstract.toString(), $abstract);
         }
         else {
-            this._afterResolvingCallbacks[$abstract].push(callback);
+            let callbacks = this._afterResolvingCallbacks.get($abstract);
+            callbacks = callbacks ? callbacks : [];
+            callbacks.push(callback);
+            this._afterResolvingCallbacks.set($abstract, callbacks);
         }
     }
 }

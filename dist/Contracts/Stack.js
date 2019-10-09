@@ -16,5 +16,8 @@ class Stack {
     end() {
         return array_1.end(this._list);
     }
+    join(s) {
+        return this._list.join(s);
+    }
 }
 exports.default = Stack;

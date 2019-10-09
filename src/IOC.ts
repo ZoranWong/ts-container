@@ -31,25 +31,7 @@ function beforeInject<T> (target: any, name: string = null): ConstructorInterfac
     return {_name: name, _constructorStr: md5(_constructorStr), _constructor: _constructor};
 }
 
-/**
- * 创建实例
- * @param {Ctor<T>} _constructor
- * @param {Array<any>} args
- * @return Function
- * */
-function createInstance<T> (_constructor: Ctor<T>, args: Array<any>) {
-    let reflectClass = new ReflectClass(_constructor);
-    let params = reflectClass.getParameters();
-    let paramInstances: Array<any> = [];
-    params.forEach((v, k) => {
-        if(typeof args[k] !== 'undefined') {
-            paramInstances.push(args[k]);
-        }else{
-            paramInstances.push(v);
-        }
-    });
-    return new _constructor(...paramInstances);
-}
+
 
 /**
  * 将class（target）注册到容器中
@@ -67,10 +49,9 @@ export function register (name: any = null, constructorParamTypes: Array<any> = 
             Reflect.defineMetadata('design:paramtypes', constructorParamTypes, target);
         }
         let {_name, _constructorStr, _constructor} = beforeInject(target, name);
-        if (!container.bound(_constructorStr))
-            container.bind(_constructorStr, (container: Container, ...args: Array<any>) => {
-                return createInstance( _constructor, args);
-            });
+        if (!container.bound(_constructorStr)) {
+            container.bind(_constructorStr, _constructor);
+        }
         if (_name) {
             container.alias(_constructorStr, _name);
         }
@@ -99,11 +80,8 @@ export function singleton (name: any = null, constructorParamTypes: Array<any> =
         }
         let {_name, _constructorStr, _constructor} = beforeInject(target, name);
         if (!container.bound(_constructorStr)){
-            container.singleton(_constructorStr, (container: Container, ...args: Array<any>) => {
-                return createInstance( _constructor, args);
-            });
+            container.singleton(_constructorStr, _constructor);
         }
-
         if (_name) {
             container.alias(_constructorStr, _name);
         }

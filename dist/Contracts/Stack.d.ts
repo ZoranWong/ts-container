@@ -4,4 +4,5 @@ export default class Stack {
     push(value: any): void;
     pop(): any;
     end(): any;
+    join(s: string): string;
 }

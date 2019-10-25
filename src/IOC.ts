@@ -3,8 +3,6 @@ import Container from './Container';
 import "reflect-metadata";
 import Ctor from "./Contracts/Ctor";
 import ConstructorInterface from "./Contracts/ConstructorInterface";
-import ReflectClass from "./ReflectClass";
-import * as md5 from "md5";
 import * as _ from "lodash";
 import {isClass} from "./Utils/Types";
 
@@ -24,13 +22,17 @@ export const container = new Container();
 * */
 function beforeInject<T> (target: any, name: string = null): ConstructorInterface<T> {
     let _constructor: Ctor<T> = (target instanceof Function ? target : target.constructor);
-    let _constructorStr = _constructor.toString();
     if (name && container.bound(name)) {
         return;
     }
-    return {_name: name, _constructorStr: md5(_constructorStr), _constructor: _constructor};
+    return {_name: name, _constructor: _constructor};
 }
 
+export function namespace (namespace: string) {
+    return (tagert: any) => {
+        tagert.namespace = _.trim(namespace,"/") + '/' + tagert.name;
+    }
+}
 
 
 /**
@@ -48,12 +50,12 @@ export function register (name: any = null, constructorParamTypes: Array<any> = 
         if(constructorParamTypes) {
             Reflect.defineMetadata('design:paramtypes', constructorParamTypes, target);
         }
-        let {_name, _constructorStr, _constructor} = beforeInject(target, name);
-        if (!container.bound(_constructorStr)) {
-            container.bind(_constructorStr, _constructor);
+        let {_name, _constructor} = beforeInject(target, name);
+        if (!container.bound(target.namespace)) {
+            container.bind(target.namespace, _constructor);
         }
         if (_name) {
-            container.alias(_constructorStr, _name);
+            container.alias(target.namespace, _name);
         }
     }
     if(!_.isString(name) && isClass(name)) {
@@ -78,12 +80,12 @@ export function singleton (name: any = null, constructorParamTypes: Array<any> =
         if(constructorParamTypes) {
             Reflect.defineMetadata('design:paramtypes', constructorParamTypes, target);
         }
-        let {_name, _constructorStr, _constructor} = beforeInject(target, name);
-        if (!container.bound(_constructorStr)){
-            container.singleton(_constructorStr, _constructor);
+        let {_name, _constructor} = beforeInject(target, name);
+        if (!container.bound(target.namespace)){
+            container.singleton(target.namespace, _constructor);
         }
         if (_name) {
-            container.alias(_constructorStr, _name);
+            container.alias(target.namespace, _name);
         }
     }
 
@@ -100,12 +102,7 @@ export function singleton (name: any = null, constructorParamTypes: Array<any> =
  * @return T
 * */
 export function factory<T> (name: any): T {
-    if (name instanceof String || typeof name === 'string') {
-        return container.get(name);
-    } else if (name instanceof Function) {
-        return container.get(md5(name.toString()));
-    }
-    return null;
+    return container.get(name);
 }
 
 /**
@@ -115,10 +112,5 @@ export function factory<T> (name: any): T {
  * @return T
  * */
 export function makeWith<T> (name: any, ...args: any[]): T {
-    if (name instanceof String || typeof name === 'string') {
-        return container.makeWith(name, args);
-    } else if (name instanceof Function) {
-        return container.makeWith(md5(name.toString()), args);
-    }
-    return null;
+    return container.makeWith(name, args);
 }

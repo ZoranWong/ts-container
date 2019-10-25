@@ -1,5 +1,5 @@
 "use strict";
-import {Closure} from './Utils/Types';
+import {Closure, ctorParamMetadata} from './Utils/Types';
 import ReflectParameter from './ReflectParameter';
 import IOCError from "./Expceptions/IOCError";
 export default class ReflectFunction {
@@ -28,6 +28,6 @@ export default class ReflectFunction {
     }
 
     protected paramParse(): any[] {
-        return [];
+        return ctorParamMetadata(this._callback);
     }
 }

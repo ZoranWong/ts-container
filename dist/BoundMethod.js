@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const Types_1 = require("./Utils/Types");
 const _ = require("lodash");
+const InvalidArgumentException_1 = require("./Expceptions/InvalidArgumentException");
 const Global = this;
 // BoundMethod主要是为方法绑定相应实例
 class BoundMethod {
@@ -11,7 +13,7 @@ class BoundMethod {
      * @param  callable|string  $callback
      * @param  array  $parameters
      * @param  string|null  $defaultMethod
-     * @return mixed
+     * @return any
      */
     static call(container, callback, parameters = [], defaultMethod = null) {
         if (BoundMethod.isCallableWithAtSign(callback) || defaultMethod) {
@@ -25,14 +27,20 @@ class BoundMethod {
      * Call a string reference to a class using Class@method syntax.
      *
      * @param  Container  container
-     * @param  string  target
+     * @param  any  target
      * @param  array parameters
      * @param  string|null  defaultMethod
-     * @return mixed
+     * @return any
      *
      * @throws \InvalidArgumentException
      */
     static callClass(container, target, parameters = [], defaultMethod = null) {
+        let segments = target.split('@');
+        let method = segments.length === 2 ? segments[1] : defaultMethod;
+        if (_.isNull(method)) {
+            throw new InvalidArgumentException_1.default('Method not provided.');
+        }
+        return BoundMethod.call(container, [container.make(segments[0]), method], parameters);
     }
     /**
      * Call a method that has been bound to the container.
@@ -44,7 +52,7 @@ class BoundMethod {
      */
     static callBoundMethod(container, callback, defaultCallback) {
         if (!_.isArray(callback)) {
-            return _.isFunction(defaultCallback) ? defaultCallback() : defaultCallback;
+            return Types_1.isClosure(defaultCallback) ? defaultCallback() : defaultCallback;
         }
         // Here we need to turn the array callable into a Class@method string we can use to
         // examine the container and see if there are any method bindings for this given
@@ -53,7 +61,7 @@ class BoundMethod {
         if (container.hasMethodBinding(method)) {
             return container.callMethodBinding(method, callback[0]);
         }
-        return _.isFunction(defaultCallback) ? defaultCallback() : defaultCallback;
+        return Types_1.isClosure(defaultCallback) ? defaultCallback() : defaultCallback;
     }
     /**
      * Normalize the given callback into a Class@method string.
@@ -62,7 +70,7 @@ class BoundMethod {
      * @return string
      */
     static normalizeMethod(callback) {
-        return _.isString(callback[0]) ? "{$callback[0]}@{$callback[1]}" : callback[0][callback[1]];
+        return _.isString(callback[0]) ? `${callback[0]}@${callback[1]}` : callback[0][callback[1]];
     }
     /**
      * Get all dependencies for a given method.

@@ -5,6 +5,5 @@ import Ctor from "./Ctor";
  * */
 export default interface ConstructorInterface<T> {
     _name: string,
-    _constructorStr: string,
     _constructor: Ctor<T>,
 }

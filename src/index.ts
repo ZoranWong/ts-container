@@ -1,10 +1,11 @@
 "use strict";
-import {register, singleton, factory, makeWith} from "./IOC";
+import {register, singleton, factory, makeWith, namespace} from "./IOC";
 
 /**
  * 注册IOC单例入口
 * */
 @singleton('IOC')
+@namespace("PrettyContainer")
 export class IOC {
     constructor(public version: String = "0.0.1"){}
     /**
@@ -34,4 +35,4 @@ export class IOC {
     }
 }
 const ioc: IOC = factory(IOC);
-export  { register, singleton, factory, makeWith, ioc};
+export  { register, singleton, factory, makeWith, namespace, ioc};

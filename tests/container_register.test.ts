@@ -2,6 +2,8 @@ import {register, singleton, factory, makeWith, ioc} from "../src";
 import {isClosure, isReallyInstanceOf, isTypeOf} from "../src/Utils/Types";
 import {container} from "../src/IOC";
 import ContainerInterface from "../src/Contracts/ContainerInterface";
+// import {import} from "@babel/types";
+import compile = WebAssembly.compile;
 type F = (k:string,fn: Function )=> void ;
 type E = (p: boolean) => any ;
 declare var test: F ;
@@ -103,3 +105,23 @@ container.afterResolving('testResolving', function () {
 
 container.when('testResolving').needs(T3).give(new T3());
 console.log(factory('testResolving'));
+// console.log(factory('./Player'));
+container.bind('App/Test', () => {
+    console.log('App/Test');
+    return 'App/Test';
+});
+//
+console.log(container.get('App/Test'));
+
+setTimeout(function () {
+    console.log('--------------- set time out ----------');
+    console.log(factory('player'));
+}, 1000)
+test('async ', async () => {
+    let res = await (async () => {return 1;})();
+    const Player = require('./Player').default;
+    console.log(res, new Player);
+    console.log(require(require.resolve('./Player')));
+    expect(1 == 1 ).toBe(true);
+});
+console.log(require.resolve(''));

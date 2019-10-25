@@ -8,21 +8,21 @@ export default class BoundMethod {
      * @param  callable|string  $callback
      * @param  array  $parameters
      * @param  string|null  $defaultMethod
-     * @return mixed
+     * @return any
      */
-    static call(container: Container, callback: Closure, parameters?: Array<any>, defaultMethod?: any): any;
+    static call(container: Container, callback: any, parameters?: Array<any>, defaultMethod?: any): any;
     /**
      * Call a string reference to a class using Class@method syntax.
      *
      * @param  Container  container
-     * @param  string  target
+     * @param  any  target
      * @param  array parameters
      * @param  string|null  defaultMethod
-     * @return mixed
+     * @return any
      *
      * @throws \InvalidArgumentException
      */
-    protected static callClass(container: Container, target: any, parameters?: Array<any>, defaultMethod?: any): void;
+    protected static callClass(container: Container, target: any, parameters?: Array<any>, defaultMethod?: any): any;
     /**
      * Call a method that has been bound to the container.
      *

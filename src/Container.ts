@@ -1,15 +1,18 @@
 "use strict";
 import ContainerContract from './Contracts/Container';
-import {Closure, isClosure} from './Utils/Types';
+import { Closure, isClass, isClosure } from './Utils/Types';
 import ContextualBindingBuilder from './ContextualBindingBuilder';
 import * as _ from 'lodash';
 import Binding from './Contracts/Binding';
 import Stack from "./Contracts/Stack";
-import {end} from "./Utils/array";
+import { end } from "./Utils/array";
 import StrKeyMap from "./StrKeyMap";
 import ReflectClass from "./ReflectClass";
 import BindingResolutionException from "./Expceptions/BindingResolutionException";
 import Ctor from "./Contracts/Ctor";
+import * as md5 from "md5";
+import { Namespace, NamespaceMap } from "./Contracts/Namespace";
+import AutoLoad from "./AutoLoad";
 
 export default class Container implements ContainerContract {
     /**
@@ -89,6 +92,7 @@ export default class Container implements ContainerContract {
      */
     protected _with: any[] = [];
 
+
     /**
      * The contextual binding map.
      *
@@ -131,24 +135,52 @@ export default class Container implements ContainerContract {
      */
     protected _afterResolvingCallbacks: StrKeyMap<any> = new StrKeyMap<any>();
 
-    constructor () {
+    protected _namespaceMap: NamespaceMap = new NamespaceMap();
 
+    constructor(rootPath: string = '', autoLoadNamespaces: Array<Namespace> = []) {
+        this.setRootPath(rootPath);
+        this.setNamespaces(autoLoadNamespaces);
     }
 
-    public get (id: any): any {
+    public setRootPath(rootPath: string) {
+        this._namespaceMap.rootPath(rootPath);
+        return this;
+    }
+
+    public setNamespaces(autoLoadNamespaces: Array<Namespace>) {
+        this._namespaceMap.namespaces(autoLoadNamespaces);
+        return this;
+    }
+
+    public get(id: any): any {
+        if(isClass(id)) {
+            id = id.namespace;
+        }
         if (this.has(id)) {
             return this.resolve(id);
+        } else {
+            return this.autoLoadResolve(id);
         }
-        return null;
     }
 
-    protected resolve ($abstract: any, parameters: Array<any> = [], raiseEvents: boolean = true): any {
+
+    protected namespaceResolve(namespace: string) {
+       return this._namespaceMap.namespaceResolve(namespace);
+    }
+
+    protected autoLoadResolve(namespace: string) {
+        namespace = this.getAlias(namespace);
+        let path = this.namespaceResolve(namespace);
+        AutoLoad.load(path);
+        return this.resolve(namespace);
+    }
+
+    protected resolve($abstract: any, parameters: Array<any> = [], raiseEvents: boolean = true): any {
         $abstract = this.getAlias($abstract);
 
         let needsContextualBuild = (parameters.length > 0 || !_.isEmpty(
             this.getContextualConcrete($abstract)
         ));
-        // console.log(needsContextualBuild, '===================== needsContextualBuild ===============', this.getContextualConcrete($abstract));
         if (!_.isEmpty(this._instances.get($abstract)) && !needsContextualBuild) {
             return this._instances.get($abstract);
         }
@@ -181,7 +213,7 @@ export default class Container implements ContainerContract {
         return object;
     }
 
-    protected isBuildable ($concrete: any, $abstract: any) {
+    protected isBuildable($concrete: any, $abstract: any) {
         return $concrete === $abstract || isClosure($concrete);
     }
 
@@ -192,7 +224,7 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param $implementation
      * */
-    public addContextualBinding ($concrete: any, $abstract: any, $implementation: any): void {
+    public addContextualBinding($concrete: any, $abstract: any, $implementation: any): void {
         this._contextual[$concrete] = this._contextual[$concrete] ? this._contextual[$concrete] : [];
         this._contextual[$concrete][this.getAlias($abstract)] = $implementation;
     }
@@ -203,7 +235,7 @@ export default class Container implements ContainerContract {
      * @return boolean
      * @param method
      */
-    public hasMethodBinding (method: string): boolean {
+    public hasMethodBinding(method: string): boolean {
         return !_.isNull(this._methodBindings.get(method));
     }
 
@@ -214,7 +246,7 @@ export default class Container implements ContainerContract {
      * @param method
      * @param instance
      */
-    public callMethodBinding (method: string, instance: any): any {
+    public callMethodBinding(method: string, instance: any): any {
         return this._methodBindings.get(method).apply(instance, this);
     }
 
@@ -225,7 +257,7 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param object
      */
-    protected fireResolvingCallbacks ($abstract: string, object: any) {
+    protected fireResolvingCallbacks($abstract: string, object: any) {
         this.fireCallbackArray(object, this._globalResolvingCallbacks);
         this.fireCallbackArray(
             object, this.getCallbacksForType($abstract, object, this._resolvingCallbacks)
@@ -234,7 +266,7 @@ export default class Container implements ContainerContract {
         this.fireAfterResolvingCallbacks($abstract, object);
     }
 
-    protected fireAfterResolvingCallbacks ($abstract: string, object: any): any {
+    protected fireAfterResolvingCallbacks($abstract: string, object: any): any {
         this.fireCallbackArray(object, this._globalAfterResolvingCallbacks);
 
         this.fireCallbackArray(
@@ -242,7 +274,7 @@ export default class Container implements ContainerContract {
         );
     }
 
-    protected getCallbacksForType ($abstract: string, object: any, callbacksForType: StrKeyMap<any>): Array<any> {
+    protected getCallbacksForType($abstract: string, object: any, callbacksForType: StrKeyMap<any>): Array<any> {
         let results: any = [];
         callbacksForType.forEach((callbacks: any, type: any) => {
             if (type === $abstract) {
@@ -252,7 +284,7 @@ export default class Container implements ContainerContract {
         return results;
     }
 
-    protected fireCallbackArray (object: any, callbacks: Array<any> | StrKeyMap<any>) {
+    protected fireCallbackArray(object: any, callbacks: Array<any> | StrKeyMap<any>) {
         callbacks.forEach((callback: any) => {
             callback instanceof Function && (callback = [callback]);
             callback.forEach((fn: Closure) => {
@@ -261,7 +293,7 @@ export default class Container implements ContainerContract {
         });
     }
 
-    protected isShared ($abstract: string): boolean {
+    protected isShared($abstract: string): boolean {
         let binding: Binding = this._bindings.get($abstract);
         return !_.isEmpty(this._instances.get($abstract)) && !_.isUndefined(this._instances.get($abstract))
             || (!_.isUndefined(binding) && !_.isEmpty(binding) && !_.isUndefined(binding.concrete)
@@ -274,7 +306,7 @@ export default class Container implements ContainerContract {
      * @return array
      * @param $abstract
      */
-    protected getExtenders ($abstract: string): Array<any> {
+    protected getExtenders($abstract: string): Array<any> {
         $abstract = this.getAlias($abstract);
         if (!this._extenders.get($abstract)) {
             return this._extenders.get($abstract);
@@ -288,7 +320,7 @@ export default class Container implements ContainerContract {
      * @param  {string}  $abstract
      * @return {any}   concrete
      */
-    protected getConcrete ($abstract: string): any {
+    protected getConcrete($abstract: string): any {
         let concrete = this.getContextualConcrete($abstract);
         if (!_.isUndefined(concrete) && !_.isNull(concrete)) {
             return concrete;
@@ -307,7 +339,7 @@ export default class Container implements ContainerContract {
      * @return string|null
      * @param $abstract
      */
-    protected getContextualConcrete ($abstract: string): any {
+    protected getContextualConcrete($abstract: string): any {
         let binding = this.findInContextualBindings($abstract);
         if (!_.isUndefined(binding) && !_.isNull(binding)) {
             return binding;
@@ -333,7 +365,7 @@ export default class Container implements ContainerContract {
      * @return string|null
      * @param $abstract
      */
-    protected findInContextualBindings ($abstract: string): any {
+    protected findInContextualBindings($abstract: string): any {
         let end = this._buildStack.end();
         if (!_.isUndefined(this._contextual[end]) && !_.isArray(this._contextual[end]) && !_.isUndefined(this._contextual[end][$abstract])) {
             return this._contextual[end][$abstract];
@@ -341,7 +373,7 @@ export default class Container implements ContainerContract {
         return null;
     }
 
-    public has (id: any): boolean {
+    public has(id: any): boolean {
         return this.bound(id);
     }
 
@@ -351,13 +383,13 @@ export default class Container implements ContainerContract {
      * @param  {string}  $abstract
      * @return boolean
      */
-    public bound ($abstract: string): boolean {
+    public bound($abstract: string): boolean {
         return !_.isUndefined(this._bindings.get($abstract))
             || !_.isUndefined(this._instances.get($abstract))
             || this.isAlias($abstract);
     }
 
-    public isAlias ($abstract: string): boolean {
+    public isAlias($abstract: string): boolean {
         return !_.isUndefined(this._aliases.get($abstract));
     }
 
@@ -368,7 +400,7 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param alias
      */
-    public alias ($abstract: string, alias: string) {
+    public alias($abstract: string, alias: string) {
         this._aliases.set(alias, $abstract);
         let aliases = this._$abstractAliases.get($abstract);
         aliases = aliases ? aliases : [];
@@ -384,7 +416,7 @@ export default class Container implements ContainerContract {
      * @throws \LogicException
      * @param $abstract
      */
-    public getAlias ($abstract: string): string {
+    public getAlias($abstract: string): string {
         let _aliases = this._aliases.get($abstract);
         if (_.isUndefined(_aliases)) {
             return $abstract;
@@ -402,7 +434,7 @@ export default class Container implements ContainerContract {
      * @param $abstracts
      * @param tags
      */
-    public tag ($abstracts: any, ...tags: Array<any>) {
+    public tag($abstracts: any, ...tags: Array<any>) {
         tags.forEach((tag) => {
             if (_.isNull(this._tags.get(tag))) {
                 this._tags.set(tag, []);
@@ -420,7 +452,7 @@ export default class Container implements ContainerContract {
      * @return array
      * @param tag
      */
-    public tagged (tag: string): Array<any> {
+    public tagged(tag: string): Array<any> {
         let results: any[] = [];
         let tags = this._tags.get(tag);
         if (_.isEmpty(tags)) {
@@ -435,20 +467,23 @@ export default class Container implements ContainerContract {
      * Register a binding with the container.
      *
      * @param  {string}  $abstract
-     * @param  {Closure}  concrete
+     * @param  {Closure|string}  concrete
      * @param  {boolean}  shared
      * @return void
      */
-    public bind ($abstract: string, concrete: Closure, shared: boolean = false) {
+    public bind($abstract: any, concrete: Closure | string, shared: boolean = false) {
+        if ($abstract === concrete) {
+            $abstract = md5($abstract.toString());
+        }
         concrete = this.getClosure(concrete);
-        let compact: Binding = {"concrete": concrete, "shared": shared};
+        let compact: Binding = { "concrete": concrete, "shared": shared };
         this._bindings.set($abstract, compact);
         if (this.resolved($abstract)) {
             this.rebound($abstract);
         }
     }
 
-    protected rebound ($abstract: any): any {
+    protected rebound($abstract: any): any {
         let instance = this.make($abstract);
         let callbacks = this.getReboundCallbacks($abstract);
         callbacks.forEach((callback: Closure) => {
@@ -462,7 +497,7 @@ export default class Container implements ContainerContract {
      * @param  {string}  $abstract
      * @return {array}
      */
-    protected getReboundCallbacks ($abstract: any): Array<any> {
+    protected getReboundCallbacks($abstract: any): Array<any> {
         if (_.isNull(this._reboundCallbacks.get($abstract))) {
             return this._reboundCallbacks.get($abstract);
         }
@@ -476,7 +511,7 @@ export default class Container implements ContainerContract {
      * @param  {Closure}  $callback
      * @return {any}
      */
-    public rebinding ($abstract: any, $callback: Closure): any {
+    public rebinding($abstract: any, $callback: Closure): any {
         $abstract = this.getAlias($abstract);
         let callbacks = this._reboundCallbacks.get($abstract);
         callbacks = callbacks ? callbacks : [];
@@ -492,11 +527,15 @@ export default class Container implements ContainerContract {
      * @param  {Closure}  $concrete
      * @return {Closure}
      */
-    protected getClosure (concrete: any): Closure {
-        return () => {
-            let parameters: Array<any> = end(this._with);
-            return this.createInstance(concrete, parameters);
-        };
+    protected getClosure(concrete: any): Closure {
+        if (isClass(concrete)) {
+            return () => {
+                let parameters: Array<any> = end(this._with);
+                return this.createInstance(concrete, parameters);
+            };
+        } else {
+            return concrete;
+        }
     }
 
     /**
@@ -505,21 +544,21 @@ export default class Container implements ContainerContract {
      * @param {Array<any>} args
      * @return Function
      * */
-    protected  createInstance (_constructor: any, args: Array<any>) {
+    protected createInstance(_constructor: any, args: Array<any>) {
         let reflectClass = new ReflectClass(_constructor);
         let params = reflectClass.getParameters();
         let paramInstances: Array<any> = [];
         params.forEach((v, k) => {
-            if(typeof args[k] !== 'undefined') {
+            if (typeof args[k] !== 'undefined') {
                 paramInstances.push(args[k]);
-            }else{
+            } else {
                 paramInstances.push(v);
             }
         });
         return new _constructor(...paramInstances);
     }
 
-    public build (concrete: any): any {
+    public build(concrete: any): any {
         if (isClosure(concrete)) {
             return concrete.apply(this, this.getLastParameterOverride())
         }
@@ -542,7 +581,7 @@ export default class Container implements ContainerContract {
      * @param concrete
      * @throws
      * */
-    protected notInstantiable (concrete: any): void {
+    protected notInstantiable(concrete: any): void {
         let message = '';
         if (!_.isEmpty(this._buildStack)) {
             let previous: String = this._buildStack.join(',');
@@ -558,11 +597,11 @@ export default class Container implements ContainerContract {
      *
      * @return array
      */
-    protected getLastParameterOverride (): Array<any> {
+    protected getLastParameterOverride(): Array<any> {
         return this._with.length > 0 ? end(this._with) : [];
     }
 
-    protected dropStaleInstances ($abstract: string) {
+    protected dropStaleInstances($abstract: string) {
         this._instances.delete($abstract);
         this._aliases.delete($abstract);
     }
@@ -575,7 +614,7 @@ export default class Container implements ContainerContract {
      * @param concrete
      * @param shared
      */
-    public bindIf ($abstract: string, concrete: any = null, shared: boolean = false) {
+    public bindIf($abstract: string, concrete: any = null, shared: boolean = false) {
         if (!this.bound($abstract)) {
             this.bind($abstract, concrete, shared);
         }
@@ -588,7 +627,7 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param concrete
      */
-    public singleton ($abstract: string, concrete: any = null) {
+    public singleton($abstract: any, concrete: any = null) {
         this.bind($abstract, concrete, true);
     }
 
@@ -601,7 +640,7 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param closure
      */
-    public extend ($abstract: string, closure: Closure) {
+    public extend($abstract: string, closure: Closure) {
         $abstract = this.getAlias($abstract);
         let instance = this._instances.get($abstract);
         if (!_.isNull(instance)) {
@@ -624,7 +663,7 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param instance
      */
-    public instance ($abstract: string, instance: any): any {
+    public instance($abstract: string, instance: any): any {
         this.removeAbstractAlias($abstract);
         let isBound = this.bound($abstract);
         this._aliases.delete($abstract);
@@ -643,7 +682,7 @@ export default class Container implements ContainerContract {
      * @return void
      * @param searched
      */
-    protected removeAbstractAlias (searched: string) {
+    protected removeAbstractAlias(searched: string) {
         if (_.isEmpty(this._aliases.get(searched))) {
             return;
         }
@@ -663,7 +702,7 @@ export default class Container implements ContainerContract {
      * @return ContextualBindingBuilder
      * @param concrete
      */
-    public when (concrete: string): ContextualBindingBuilder {
+    public when(concrete: string): ContextualBindingBuilder {
         return new ContextualBindingBuilder(this, this.getAlias(concrete));
     }
 
@@ -673,8 +712,8 @@ export default class Container implements ContainerContract {
      * @return \Closure
      * @param $abstract
      */
-    public factory ($abstract: string): Closure {
-        return function () {
+    public factory($abstract: string): Closure {
+        return function() {
             return this.make($abstract);
         };
     }
@@ -686,7 +725,7 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param parameters
      */
-    public makeWith ($abstract: String, parameters: any[] = []): any {
+    public makeWith($abstract: any, parameters: any[] = []): any {
         return this.make($abstract, parameters);
     }
 
@@ -697,7 +736,10 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param parameters
      */
-    public make ($abstract: String, parameters: Array<any> = []): any {
+    public make($abstract: any, parameters: Array<any> = []): any {
+        if (!_.isString($abstract)) {
+            $abstract = md5($abstract.toString());
+        }
         return this.resolve($abstract, parameters);
     }
 
@@ -709,7 +751,7 @@ export default class Container implements ContainerContract {
      * @param parameters
      * @param defaultMethod
      */
-    public all (callback: any, parameters: Array<any>, defaultMethod: string) {
+    public all(callback: any, parameters: Array<any>, defaultMethod: string) {
 
     }
 
@@ -719,7 +761,7 @@ export default class Container implements ContainerContract {
      * @return boolean
      * @param $abstract
      */
-    public resolved ($abstract: any): boolean {
+    public resolved($abstract: any): boolean {
         if (this.isAlias($abstract)) {
             $abstract = this.getAlias($abstract);
         }
@@ -734,7 +776,7 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param callback
      */
-    public resolving ($abstract: any, callback: any = null) {
+    public resolving($abstract: any, callback: any = null) {
         if (_.isString($abstract)) {
             $abstract = this.getAlias($abstract);
         }
@@ -754,7 +796,7 @@ export default class Container implements ContainerContract {
      * @param $abstract
      * @param callback
      */
-    public afterResolving ($abstract: any, callback: any) {
+    public afterResolving($abstract: any, callback: any) {
         if (_.isString($abstract)) {
             $abstract = this.getAlias($abstract);
         }
